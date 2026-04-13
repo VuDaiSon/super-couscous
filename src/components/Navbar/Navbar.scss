@@ -1,0 +1,39 @@
+.navbar {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+
+  background: white;
+
+  &__item {
+    cursor: pointer;
+    font-size: 14px;
+
+    text-transform: uppercase;
+    letter-spacing: 2px;
+
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: #999;
+    }
+
+    &.active {
+      font-weight: 700;
+      color: black; // 👈 giữ đậm, không gạch
+      border-bottom: none; // 👈 QUAN TRỌNG
+    }
+  }
+
+  .highlight {
+    font-weight: 600;
+  }
+}
+@media (max-width: 768px) {
+  .navbar {
+    display: none;
+  }
+}

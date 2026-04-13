@@ -1,0 +1,399 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100px;
+  padding: 0 30px;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1000;
+
+  &__logo {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    cursor: pointer;
+    .main {
+      font-size: 48px;
+      font-weight: 400;
+      letter-spacing: 2px;
+    }
+
+    .sub {
+      font-size: 12px;
+      letter-spacing: 6px;
+      font-weight: 400;
+    }
+    .main,
+    .sub {
+      transition: all 0.3s ease;
+    }
+
+    /* 🔥 HOVER EFFECT */
+    &:hover {
+      .main,
+      .sub {
+        color: #999; // 🔥 chuyển xám nhẹ (luxury style)
+      }
+    }
+
+    /* 🔥 ACTIVE (click) */
+    &:active {
+      .main,
+      .sub {
+        color: #ccc;
+      }
+    }
+  }
+
+  &__right {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  &__icon {
+    font-size: 20px;
+    cursor: pointer;
+
+    &:hover {
+      opacity: 0.6;
+    }
+  }
+}
+
+/* ===== MENU BUTTON ===== */
+.menu-btn {
+  width: 44px; // 🔥 dài hơn rõ rệt
+  height: 14px; // 🔥 tăng khoảng cách giữa 2 line
+  position: relative;
+  cursor: pointer;
+
+  span {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 1.4px; // 🔥 line trên hơi đậm hơn
+    background: #111;
+    transition: all 0.35s ease;
+  }
+
+  /* ===== LINE TRÊN (đậm) ===== */
+  span:nth-child(1) {
+    top: 0;
+    opacity: 1;
+  }
+
+  /* ===== LINE DƯỚI (nhạt hơn) ===== */
+  span:nth-child(2) {
+    bottom: 0;
+    opacity: 0.5; // 🔥 tạo layer feel
+  }
+
+  /* ===== ACTIVE → X ===== */
+  &.active {
+    span:nth-child(1) {
+      top: 50%;
+      transform: translateY(-50%) rotate(45deg);
+      opacity: 1;
+    }
+
+    span:nth-child(2) {
+      bottom: auto;
+      top: 50%;
+      transform: translateY(-50%) rotate(-45deg);
+      opacity: 1; // 🔥 khi thành X thì đều màu
+    }
+  }
+}
+
+/* ===== COUNTRY FLAG ===== */
+.country {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+
+  img {
+    width: 18px;
+    height: 12px;
+    object-fit: cover;
+    border-radius: 2px;
+  }
+
+  span {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+}
+
+/* ===== DRAWER ===== */
+.ant-drawer-body {
+  background: black;
+}
+
+.ant-drawer-header {
+  background: black;
+  border-bottom: 1px solid #333;
+
+  .ant-drawer-title {
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+}
+
+/* ===== CATEGORY ===== */
+.category-item {
+  color: white;
+  padding: 14px 0;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 500;
+  border-bottom: 1px solid #222;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #ccc;
+    padding-left: 5px;
+  }
+}
+
+/* ===== SEARCH ===== */
+.search-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.search-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 600px;
+  background: white;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-radius: 8px;
+  z-index: 1000;
+  animation: fadeCenter 0.25s ease;
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+
+  svg {
+    font-size: 20px;
+    cursor: pointer;
+  }
+}
+
+@keyframes fadeCenter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -52%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ========================= */
+/* TABLET */
+/* ========================= */
+@media (max-width: 1024px) {
+  .topbar {
+    height: 80px;
+    padding: 0 20px;
+
+    &__logo {
+      .main {
+        font-size: 32px;
+      }
+
+      .sub {
+        font-size: 10px;
+        letter-spacing: 4px;
+      }
+    }
+
+    &__icon {
+      font-size: 18px;
+    }
+  }
+  .menu-btn {
+    width: 36px;
+    height: 12px;
+  }
+
+  .country {
+    img {
+      width: 16px;
+      height: 11px;
+    }
+
+    span {
+      font-size: 11px;
+    }
+  }
+}
+
+/* ========================= */
+/* MOBILE */
+/* ========================= */
+@media (max-width: 768px) {
+  .topbar {
+    height: 65px;
+    padding: 0 16px;
+
+    &__logo {
+      .main {
+        font-size: 22px;
+        letter-spacing: 1px;
+      }
+
+      .sub {
+        font-size: 9px;
+        letter-spacing: 3px;
+      }
+    }
+
+    &__right {
+      gap: 14px;
+    }
+
+    &__icon {
+      font-size: 16px;
+    }
+  }
+
+  .menu-btn {
+    width: 30px;
+    height: 10px;
+  }
+
+  .country {
+    gap: 4px;
+
+    img {
+      width: 14px;
+      height: 10px;
+    }
+
+    span {
+      font-size: 10px;
+    }
+  }
+}
+
+/* ========================= */
+/* SMALL MOBILE */
+/* ========================= */
+@media (max-width: 480px) {
+  .topbar {
+    height: 60px;
+
+    &__logo {
+      .main {
+        font-size: 18px;
+      }
+
+      .sub {
+        font-size: 8px;
+        letter-spacing: 2px;
+      }
+    }
+
+    &__icon {
+      font-size: 15px;
+    }
+  }
+
+  .menu-btn {
+    width: 26px;
+    height: 9px;
+  }
+
+  .country span {
+    display: none;
+  }
+}
+/* ========================= */
+/* RESPONSIVE SEARCH */
+/* ========================= */
+
+/* TABLET */
+@media (max-width: 1024px) {
+  .search-panel {
+    width: 70%;
+    max-width: 500px;
+    padding: 16px 24px;
+    border-radius: 6px;
+
+    input {
+      font-size: 14px;
+      letter-spacing: 1.5px;
+    }
+
+    svg {
+      font-size: 18px;
+    }
+  }
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .search-panel {
+    width: 85%;
+    max-width: 420px;
+    padding: 14px 18px;
+    border-radius: 6px;
+    gap: 12px;
+
+    input {
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    svg {
+      font-size: 17px;
+    }
+  }
+}
+
+/* SMALL MOBILE */
+@media (max-width: 480px) {
+  .search-panel {
+    width: 90%;
+    max-width: 340px;
+    padding: 12px 14px;
+    border-radius: 5px;
+    gap: 10px;
+
+    input {
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    svg {
+      font-size: 16px;
+    }
+  }
+}

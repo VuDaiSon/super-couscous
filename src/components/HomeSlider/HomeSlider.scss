@@ -1,0 +1,111 @@
+.home-slider {
+  width: 100%;
+  background: #fff;
+
+  .slide {
+    width: 100%;
+    aspect-ratio: 16 / 5.5;
+    overflow: hidden;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* 🔥 FIX SWIPE MOBILE */
+    touch-action: pan-y;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      pointer-events: auto;
+      cursor: grab;
+      user-select: none;
+
+      &:active {
+        cursor: grabbing; // 👈 khi đang kéo
+      }
+    }
+  }
+}
+
+/* ===== PROGRESS ===== */
+.progress-container {
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.progress-item {
+  width: 120px;
+  height: 2px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #111;
+}
+
+.progress-item.active .progress-bar {
+  animation: progressAnim 3s linear forwards;
+}
+
+@keyframes progressAnim {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* ========================= */
+/* TABLET */
+/* ========================= */
+@media (max-width: 1024px) {
+  .home-slider {
+    .slide {
+      aspect-ratio: 16 / 7;
+    }
+  }
+
+  .progress-item {
+    width: 70px;
+  }
+}
+
+/* ========================= */
+/* MOBILE */
+/* ========================= */
+@media (max-width: 768px) {
+  .home-slider {
+    .slide {
+      aspect-ratio: 16 / 5.5;
+    }
+  }
+
+  .progress-container {
+    margin-top: 15px;
+    gap: 6px;
+  }
+
+  .progress-item {
+    width: 50px;
+    height: 1.5px;
+  }
+}
+
+/* ========================= */
+/* SMALL MOBILE */
+/* ========================= */
+@media (max-width: 480px) {
+  .progress-item {
+    width: 30px;
+  }
+}

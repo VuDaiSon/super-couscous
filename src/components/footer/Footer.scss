@@ -1,0 +1,152 @@
+.footer {
+  background: #0a0a0a;
+  color: #e5e5e5;
+  padding: 70px 80px 30px;
+  font-size: 13px;
+}
+
+/* TOP */
+.footer-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 50px;
+}
+
+/* COLUMN */
+.footer-col {
+  flex: 1;
+
+  h4 {
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    color: #777;
+  }
+
+  p {
+    margin-bottom: 12px;
+    cursor: pointer;
+    position: relative;
+    width: fit-content;
+    font-weight: 500;
+    /* 🔥 UNDERLINE ANIMATION */
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 0%;
+      height: 1px;
+      background: white;
+      transition: 0.3s;
+    }
+
+    &:hover::after {
+      width: 100%;
+    }
+  }
+}
+
+/* SOCIAL */
+.social {
+  display: flex;
+  gap: 18px;
+  font-size: 20px;
+
+  a {
+    color: #aaa;
+    transition: 0.3s;
+
+    &:hover {
+      color: white;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/* EMAIL */
+.email {
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+
+/* NEWSLETTER */
+.newsletter {
+  display: flex;
+  border-bottom: 1px solid #333;
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 8px 0;
+    color: white;
+    outline: none;
+  }
+
+  button {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+
+    &:hover {
+      color: white;
+    }
+  }
+}
+
+/* 🔥 FADE LINE */
+.divider {
+  height: 1px;
+  margin: 50px 0 25px;
+  background: linear-gradient(to right, transparent, #333, transparent);
+}
+
+/* BOTTOM */
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* BRAND */
+.brand {
+  text-align: center;
+
+  .main {
+    font-size: 24px;
+    letter-spacing: 3px;
+    font-weight: 500;
+  }
+
+  .sub {
+    font-size: 9px;
+    letter-spacing: 5px;
+    color: #969595;
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .footer {
+    padding: 40px 20px;
+  }
+
+  .footer-top {
+    display: grid; // 🔥 đổi flex -> grid
+    grid-template-columns: 1fr 1fr; // 🔥 2 cột
+    gap: 30px;
+  }
+
+  /* 🔥 NEWSLETTER chiếm full */
+  .footer-col:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
