@@ -133,10 +133,13 @@ function ProductAdmin() {
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async () => {
-    if (loading || isSubmitting.current) return;
+  const submitLock = useRef(false);
 
-    isSubmitting.current = true;
+  const handleSubmit = async () => {
+    // 🔥 khóa cứng tuyệt đối
+    if (submitLock.current) return;
+
+    submitLock.current = true;
     setLoading(true);
 
     try {
@@ -148,27 +151,22 @@ function ProductAdmin() {
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
-      // upload main
+      // ===== upload main =====
       if (mainFile) {
         const mainData = new FormData();
         mainData.append("file", mainFile);
 
-        const mainRes = await axiosClient.post("/files/upload", mainData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
+        const mainRes = await axiosClient.post("/files/upload", mainData);
         mainImageUrl = mainRes.data;
       }
 
-      // upload multi song song
+      // ===== upload multi (song song) =====
       if (imageFiles.length > 0) {
         const uploadPromises = imageFiles.map((file) => {
           const formData = new FormData();
           formData.append("file", file);
 
-          return axiosClient.post("/files/upload", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
+          return axiosClient.post("/files/upload", formData);
         });
 
         const results = await Promise.all(uploadPromises);
@@ -185,11 +183,12 @@ function ProductAdmin() {
 
       if (mode === "create") {
         await productApi.admin.create(payload);
-        alert("Tạo thành công");
       } else {
         await productApi.admin.update(selected.productId, payload);
-        alert("Cập nhật thành công");
       }
+
+      // 🔥 alert 1 lần duy nhất
+      alert(mode === "create" ? "Tạo thành công" : "Cập nhật thành công");
 
       setMode("list");
       setPage(0);
@@ -198,8 +197,11 @@ function ProductAdmin() {
       console.error(err);
       alert("Có lỗi xảy ra");
     } finally {
-      setLoading(false);
-      isSubmitting.current = false;
+      // 🔥 delay unlock để chặn spam click cực nhanh
+      setTimeout(() => {
+        submitLock.current = false;
+        setLoading(false);
+      }, 800); // 👈 key fix
     }
   };
 
