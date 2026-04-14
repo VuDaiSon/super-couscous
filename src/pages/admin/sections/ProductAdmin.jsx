@@ -55,9 +55,30 @@ function ProductAdmin() {
     setCategories(res.data?.data || []);
   };
 
-  // =============================
-  // SELECT / CREATE
-  // =============================
+  const resetForm = () => {
+    setForm({
+      name: "",
+      description: "",
+      quantity: 0,
+      price: 0,
+      color: "",
+      mainImage: "",
+      image: [],
+      age: 0,
+      sex: "UNISEX",
+      categoryId: "",
+    });
+    setMainFile(null);
+    setImageFiles([]);
+    setMainPreview(null);
+    setImagesPreview([]);
+  };
+
+  const handleCreate = () => {
+    resetForm();
+    setMode("create");
+  };
+
   const handleSelect = async (id) => {
     const res = await productApi.getById(id);
     const data = res.data;
@@ -85,31 +106,7 @@ function ProductAdmin() {
     setMode("edit");
   };
 
-  const handleCreate = () => {
-    setForm({
-      name: "",
-      description: "",
-      quantity: 0,
-      price: 0,
-      color: "",
-      mainImage: "",
-      image: [],
-      age: 0,
-      sex: "UNISEX",
-      categoryId: "",
-    });
-
-    setMainPreview(null);
-    setImagesPreview([]);
-    setMainFile(null);
-    setImageFiles([]);
-
-    setMode("create");
-  };
-
-  // =============================
-  // IMAGE
-  // =============================
+  // ================= IMAGE =================
   const handleMainImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -128,22 +125,20 @@ function ProductAdmin() {
   };
 
   const handleRemoveImage = (index) => {
-    const oldImagesCount = form.image.length;
+    const oldCount = form.image.length;
 
-    if (index < oldImagesCount) {
+    if (index < oldCount) {
       const newImages = form.image.filter((_, i) => i !== index);
       setForm((prev) => ({ ...prev, image: newImages }));
     } else {
-      const fileIndex = index - oldImagesCount;
+      const fileIndex = index - oldCount;
       setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
     }
 
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // =============================
-  // CLOUDINARY UPLOAD
-  // =============================
+  // ================= CLOUDINARY =================
   const uploadToCloudinary = async (file, folder) => {
     const data = new FormData();
     data.append("file", file);
@@ -158,12 +153,9 @@ function ProductAdmin() {
     return res.data.secure_url;
   };
 
-  // =============================
-  // SUBMIT (🔥 FIX SPAM)
-  // =============================
+  // ================= SUBMIT =================
   const handleSubmit = async () => {
-    // 🔥 CHẶN SPAM CỨNG
-    if (submitLock.current || loading) return;
+    if (submitLock.current) return;
 
     submitLock.current = true;
     setLoading(true);
@@ -205,32 +197,23 @@ function ProductAdmin() {
       alert(mode === "create" ? "Tạo thành công" : "Cập nhật thành công");
 
       setMode("list");
-      setPage(0);
       fetchProducts(0);
     } catch (err) {
       console.error(err);
       alert("Có lỗi xảy ra");
     } finally {
-      // 🔥 DELAY UNLOCK → CHẶN CLICK LIÊN HOÀN
-      setTimeout(() => {
-        submitLock.current = false;
-        setLoading(false);
-      }, 800);
+      submitLock.current = false;
+      setLoading(false);
     }
   };
 
-  // =============================
-  // DELETE
-  // =============================
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa?")) return;
     await productApi.admin.delete(id);
     fetchProducts(page);
   };
 
-  // =============================
-  // LIST UI
-  // =============================
+  // ================= LIST =================
   if (mode === "list") {
     return (
       <div className="card">
@@ -287,9 +270,7 @@ function ProductAdmin() {
     );
   }
 
-  // =============================
-  // FORM UI
-  // =============================
+  // ================= FORM =================
   return (
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
@@ -323,6 +304,28 @@ function ProductAdmin() {
           }
         />
 
+        <input
+          placeholder="Màu"
+          value={form.color}
+          onChange={(e) => setForm({ ...form, color: e.target.value })}
+        />
+
+        <input
+          type="number"
+          placeholder="Age"
+          value={form.age}
+          onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
+        />
+
+        <select
+          value={form.sex}
+          onChange={(e) => setForm({ ...form, sex: e.target.value })}
+        >
+          <option value="UNISEX">UNISEX</option>
+          <option value="MALE">MALE</option>
+          <option value="FEMALE">FEMALE</option>
+        </select>
+
         <select
           value={form.categoryId}
           onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
@@ -335,9 +338,11 @@ function ProductAdmin() {
           ))}
         </select>
 
+        {/* MAIN IMAGE */}
         <input type="file" onChange={handleMainImageUpload} />
         {mainPreview && <img src={mainPreview} width="100" />}
 
+        {/* MULTI IMAGE */}
         <input type="file" multiple onChange={handleImagesUpload} />
 
         <div>
