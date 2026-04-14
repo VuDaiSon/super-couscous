@@ -5,7 +5,7 @@ import { buildImageUrl } from "../../../utils/image";
 import axios from "axios";
 
 const CLOUD_NAME = "dxohrnltp";
-const UPLOAD_PRESET = "upload_public"; // 👈 preset unsigned
+const UPLOAD_PRESET = "upload_public";
 
 function ProductAdmin() {
   const [products, setProducts] = useState([]);
@@ -55,30 +55,9 @@ function ProductAdmin() {
     setCategories(res.data?.data || []);
   };
 
-  const resetForm = () => {
-    setForm({
-      name: "",
-      description: "",
-      quantity: 0,
-      price: 0,
-      color: "",
-      mainImage: "",
-      image: [],
-      age: 0,
-      sex: "UNISEX",
-      categoryId: "",
-    });
-    setMainFile(null);
-    setImageFiles([]);
-    setMainPreview(null);
-    setImagesPreview([]);
-  };
-
-  const handleCreate = () => {
-    resetForm();
-    setMode("create");
-  };
-
+  // =============================
+  // SELECT / CREATE
+  // =============================
   const handleSelect = async (id) => {
     const res = await productApi.getById(id);
     const data = res.data;
@@ -106,6 +85,31 @@ function ProductAdmin() {
     setMode("edit");
   };
 
+  const handleCreate = () => {
+    setForm({
+      name: "",
+      description: "",
+      quantity: 0,
+      price: 0,
+      color: "",
+      mainImage: "",
+      image: [],
+      age: 0,
+      sex: "UNISEX",
+      categoryId: "",
+    });
+
+    setMainPreview(null);
+    setImagesPreview([]);
+    setMainFile(null);
+    setImageFiles([]);
+
+    setMode("create");
+  };
+
+  // =============================
+  // IMAGE
+  // =============================
   const handleMainImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -118,25 +122,28 @@ function ProductAdmin() {
     const files = Array.from(e.target.files);
 
     setImageFiles((prev) => [...prev, ...files]);
+
     const previews = files.map((file) => URL.createObjectURL(file));
     setImagesPreview((prev) => [...prev, ...previews]);
   };
 
   const handleRemoveImage = (index) => {
-    const oldCount = form.image.length;
+    const oldImagesCount = form.image.length;
 
-    if (index < oldCount) {
+    if (index < oldImagesCount) {
       const newImages = form.image.filter((_, i) => i !== index);
       setForm((prev) => ({ ...prev, image: newImages }));
     } else {
-      const fileIndex = index - oldCount;
+      const fileIndex = index - oldImagesCount;
       setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
     }
 
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // 🔥 upload helper
+  // =============================
+  // CLOUDINARY UPLOAD
+  // =============================
   const uploadToCloudinary = async (file, folder) => {
     const data = new FormData();
     data.append("file", file);
@@ -151,6 +158,9 @@ function ProductAdmin() {
     return res.data.secure_url;
   };
 
+  // =============================
+  // SUBMIT
+  // =============================
   const handleSubmit = async () => {
     if (submitLock.current) return;
 
@@ -159,7 +169,8 @@ function ProductAdmin() {
 
     try {
       if (!mainPreview) {
-        throw new Error("Thiếu ảnh chính");
+        alert("Thiếu ảnh chính");
+        return;
       }
 
       let mainImageUrl = form.mainImage;
@@ -192,39 +203,45 @@ function ProductAdmin() {
         await productApi.admin.update(selected.productId, payload);
       }
 
-      alert("Thành công");
+      alert(mode === "create" ? "Tạo thành công" : "Cập nhật thành công");
 
       setMode("list");
+      setPage(0);
       fetchProducts(0);
     } catch (err) {
       console.error(err);
-      alert(err.message || "Lỗi");
+      alert("Có lỗi xảy ra");
     } finally {
       submitLock.current = false;
       setLoading(false);
     }
   };
 
+  // =============================
+  // DELETE
+  // =============================
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa?")) return;
     await productApi.admin.delete(id);
     fetchProducts(page);
   };
 
-  // ===== LIST =====
+  // =============================
+  // LIST UI (GIỮ NGUYÊN)
+  // =============================
   if (mode === "list") {
     return (
       <div className="card">
         <h2>📦 Quản lý sản phẩm</h2>
 
-        <button onClick={handleCreate}>+ Thêm</button>
+        <button onClick={handleCreate}>+ Thêm sản phẩm</button>
 
         <table className="admin-table">
           <thead>
             <tr>
               <th>Tên</th>
               <th>Giá</th>
-              <th>SL</th>
+              <th>Số lượng</th>
               <th>Ảnh</th>
               <th></th>
             </tr>
@@ -237,7 +254,7 @@ function ProductAdmin() {
                 <td>{p.price}</td>
                 <td>{p.quantity}</td>
                 <td>
-                  <img src={buildImageUrl(p.mainImage)} width="50" />
+                  <img src={buildImageUrl(p.mainImage)} width="50" alt="" />
                 </td>
                 <td>
                   <button onClick={() => handleSelect(p.productId)}>Sửa</button>
@@ -250,55 +267,98 @@ function ProductAdmin() {
 
         <div style={{ marginTop: 20 }}>
           <button disabled={page === 0} onClick={() => setPage(page - 1)}>
-            ◀
+            ◀ Prev
           </button>
 
           <span style={{ margin: "0 10px" }}>
-            {page + 1} / {totalPages}
+            Page {page + 1} / {totalPages}
           </span>
 
           <button
             disabled={page + 1 >= totalPages}
             onClick={() => setPage(page + 1)}
           >
-            ▶
+            Next ▶
           </button>
         </div>
       </div>
     );
   }
 
-  // ===== FORM =====
+  // =============================
+  // FORM UI (GIỮ GRID)
+  // =============================
   return (
     <div className="card">
-      <h2>{mode === "create" ? "Thêm" : "Sửa"} sản phẩm</h2>
+      <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
 
-      <input
-        placeholder="Tên"
-        value={form.name}
-        onChange={(e) => setForm({ ...form, name: e.target.value })}
-      />
+      <div className="form-grid">
+        <input
+          placeholder="Tên"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
 
-      <input type="file" onChange={handleMainImageUpload} />
+        <input
+          placeholder="Mô tả"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
 
-      {mainPreview && <img src={mainPreview} width="100" alt="preview" />}
+        <input
+          type="number"
+          placeholder="Giá"
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
+        />
 
-      <input type="file" multiple onChange={handleImagesUpload} />
+        <input
+          type="number"
+          placeholder="Số lượng"
+          value={form.quantity}
+          onChange={(e) =>
+            setForm({ ...form, quantity: Number(e.target.value) })
+          }
+        />
 
-      <div>
-        {imagesPreview.map((img, i) => (
-          <div key={i}>
-            <img src={img} width="80" />
-            <button onClick={() => handleRemoveImage(i)}>X</button>
-          </div>
-        ))}
+        <select
+          value={form.categoryId}
+          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+        >
+          <option value="">Chọn danh mục</option>
+          {categories.map((c) => (
+            <option key={c.categoryId} value={c.categoryId}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        {/* MAIN IMAGE */}
+        <input type="file" onChange={handleMainImageUpload} />
+        {mainPreview && <img src={mainPreview} width="100" />}
+
+        {/* MULTI IMAGE */}
+        <input type="file" multiple onChange={handleImagesUpload} />
+
+        <div>
+          {imagesPreview.map((img, i) => (
+            <div key={i}>
+              <img src={img} width="80" />
+              <button onClick={() => handleRemoveImage(i)}>X</button>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <button onClick={handleSubmit} disabled={loading}>
-        {loading ? "Đang xử lý..." : "Submit"}
-      </button>
+      <div style={{ marginTop: 20 }}>
+        <button onClick={handleSubmit} disabled={loading}>
+          {loading ? "Đang xử lý..." : mode === "create" ? "Tạo" : "Cập nhật"}
+        </button>
 
-      <button onClick={() => setMode("list")}>Quay lại</button>
+        <button onClick={() => setMode("list")} style={{ marginLeft: 10 }}>
+          Quay lại
+        </button>
+      </div>
     </div>
   );
 }
