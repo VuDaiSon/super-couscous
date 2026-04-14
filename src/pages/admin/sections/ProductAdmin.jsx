@@ -159,10 +159,11 @@ function ProductAdmin() {
   };
 
   // =============================
-  // SUBMIT
+  // SUBMIT (🔥 FIX SPAM)
   // =============================
   const handleSubmit = async () => {
-    if (submitLock.current) return;
+    // 🔥 CHẶN SPAM CỨNG
+    if (submitLock.current || loading) return;
 
     submitLock.current = true;
     setLoading(true);
@@ -176,12 +177,10 @@ function ProductAdmin() {
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
-      // upload main
       if (mainFile) {
         mainImageUrl = await uploadToCloudinary(mainFile, "products");
       }
 
-      // upload multi
       if (imageFiles.length > 0) {
         const uploads = imageFiles.map((file) =>
           uploadToCloudinary(file, "products"),
@@ -212,8 +211,11 @@ function ProductAdmin() {
       console.error(err);
       alert("Có lỗi xảy ra");
     } finally {
-      submitLock.current = false;
-      setLoading(false);
+      // 🔥 DELAY UNLOCK → CHẶN CLICK LIÊN HOÀN
+      setTimeout(() => {
+        submitLock.current = false;
+        setLoading(false);
+      }, 800);
     }
   };
 
@@ -227,7 +229,7 @@ function ProductAdmin() {
   };
 
   // =============================
-  // LIST UI (GIỮ NGUYÊN)
+  // LIST UI
   // =============================
   if (mode === "list") {
     return (
@@ -286,7 +288,7 @@ function ProductAdmin() {
   }
 
   // =============================
-  // FORM UI (GIỮ GRID)
+  // FORM UI
   // =============================
   return (
     <div className="card">
@@ -333,11 +335,9 @@ function ProductAdmin() {
           ))}
         </select>
 
-        {/* MAIN IMAGE */}
         <input type="file" onChange={handleMainImageUpload} />
         {mainPreview && <img src={mainPreview} width="100" />}
 
-        {/* MULTI IMAGE */}
         <input type="file" multiple onChange={handleImagesUpload} />
 
         <div>
