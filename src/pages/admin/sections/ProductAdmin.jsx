@@ -293,14 +293,11 @@ function ProductAdmin() {
           </div>
         ))}
       </div>
-
       <button onClick={handleSubmit} disabled={loading}>
         {loading ? "Đang xử lý..." : "Submit"}
       </button>
-
       <button onClick={() => setMode("list")}>Quay lại</button>
     </div>
   );
 }
-
 export default ProductAdmin;
