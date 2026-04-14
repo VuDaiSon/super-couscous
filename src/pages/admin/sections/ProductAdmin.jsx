@@ -180,13 +180,11 @@ function ProductAdmin() {
         mainImage: mainImageUrl,
         image: imageUrls,
       };
-
       if (mode === "create") {
         await productApi.admin.create(payload);
       } else {
         await productApi.admin.update(selected.productId, payload);
       }
-
       // 🔥 alert 1 lần duy nhất
       alert(mode === "create" ? "Tạo thành công" : "Cập nhật thành công");
 
