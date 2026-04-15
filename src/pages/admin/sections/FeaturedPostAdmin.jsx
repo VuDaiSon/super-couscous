@@ -8,6 +8,7 @@ const CLOUD_NAME = "dxohrnltp";
 const UPLOAD_PRESET = "upload_public";
 
 function FeaturedPostAdmin() {
+  const [uploadedUrl, setUploadedUrl] = useState(null);
   const [list, setList] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -113,56 +114,43 @@ function FeaturedPostAdmin() {
     let uploadedImage = null;
 
     try {
-      // ===== VALIDATE =====
       if (!preview) throw new Error("Chưa có ảnh");
       if (!form.categoryId) throw new Error("Chưa chọn danh mục");
 
-      // ===== CHECK DUPLICATE =====
       if (mode === "create") {
         const existed = list.find(
           (item) => item.category?.categoryId === form.categoryId,
         );
-
-        if (existed) {
-          throw new Error("Category này đã có banner");
-        }
+        if (existed) throw new Error("Category đã có banner");
       }
 
-      // ===== UPLOAD FIRST =====
+      // upload
       if (file) {
         uploadedImage = await uploadToCloudinary(file);
+        setUploadedUrl(uploadedImage);
       }
 
-      // ===== CALL API AFTER UPLOAD =====
       const payload = {
         ...form,
         url: uploadedImage || form.url,
       };
 
-      if (mode === "create") {
-        await bannerApi.create(payload);
-      } else {
-        await bannerApi.update(selected.featuredPostId, payload);
-      }
+      await (mode === "create"
+        ? bannerApi.create(payload)
+        : bannerApi.update(selected.featuredPostId, payload));
 
       showToast("Thành công", "success");
       setMode("list");
       fetchData();
     } catch (err) {
-      console.error(err);
+      // ❗ IMPORTANT: nếu upload xong mà API fail
+      // thì ảnh đã "rác" → chỉ có thể log hoặc cleanup backend
 
-      // ⚠️ IMPORTANT: rollback logic
-      // (Cloudinary không auto rollback được → phải chấp nhận hoặc handle backend)
-
-      let message = "❌ Có lỗi xảy ra";
-
-      if (err.message) message = err.message;
-
-      if (err.response?.status === 500) {
-        message = "❌ Category đã có banner (OneToOne conflict)";
+      if (uploadedImage) {
+        console.warn("⚠️ Image uploaded but request failed:", uploadedImage);
       }
 
-      showToast(message, "error");
+      showToast(err.message || "Lỗi", "error");
     } finally {
       submitLock.current = false;
       setLoading(false);
