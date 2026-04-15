@@ -106,7 +106,7 @@ function ProductAdmin() {
     setMode("edit");
   };
 
-  // ===== IMAGE HANDLER =====
+  // ===== IMAGE =====
   const handleMainImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -276,6 +276,14 @@ function ProductAdmin() {
         </div>
 
         <div className="form-group">
+          <label>Mô tả</label>
+          <input
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+        </div>
+
+        <div className="form-group">
           <label>Giá</label>
           <input
             type="number"
@@ -291,6 +299,35 @@ function ProductAdmin() {
             value={form.quantity}
             onChange={(e) => setForm({ ...form, quantity: e.target.value })}
           />
+        </div>
+
+        <div className="form-group">
+          <label>Màu</label>
+          <input
+            value={form.color}
+            onChange={(e) => setForm({ ...form, color: e.target.value })}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Độ tuổi</label>
+          <input
+            type="number"
+            value={form.age}
+            onChange={(e) => setForm({ ...form, age: e.target.value })}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Giới tính</label>
+          <select
+            value={form.sex}
+            onChange={(e) => setForm({ ...form, sex: e.target.value })}
+          >
+            <option value="UNISEX">UNISEX</option>
+            <option value="MALE">MALE</option>
+            <option value="FEMALE">FEMALE</option>
+          </select>
         </div>
 
         <div className="form-group">
