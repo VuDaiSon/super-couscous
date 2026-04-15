@@ -20,6 +20,8 @@ function FeaturedPostAdmin() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
+  const [toast, setToast] = useState(null);
+
   const [form, setForm] = useState({
     url: "",
     categoryId: "",
@@ -38,6 +40,15 @@ function FeaturedPostAdmin() {
   const fetchCategories = async () => {
     const res = await categoryApi.getAll(0);
     setCategories(res.data?.data || []);
+  };
+
+  // ===== TOAST =====
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
   };
 
   const resetForm = () => {
@@ -100,11 +111,11 @@ function FeaturedPostAdmin() {
     setLoading(true);
 
     try {
-      // 🔥 VALIDATE
+      // VALIDATE
       if (!preview) throw new Error("Chưa có ảnh");
       if (!form.categoryId) throw new Error("Chưa chọn danh mục");
 
-      // 🔥 CHECK DUPLICATE
+      // DUPLICATE CHECK
       if (mode === "create") {
         const existed = list.find(
           (item) => item.category?.categoryId === form.categoryId,
@@ -117,7 +128,7 @@ function FeaturedPostAdmin() {
 
       let imageUrl = form.url;
 
-      // 🔥 upload nếu có file mới
+      // UPLOAD ONLY IF NEW FILE
       if (file) {
         imageUrl = await uploadToCloudinary(file);
       }
@@ -129,17 +140,34 @@ function FeaturedPostAdmin() {
 
       if (mode === "create") {
         await bannerApi.create(payload);
+        showToast("Tạo banner thành công", "success");
       } else {
         await bannerApi.update(selected.featuredPostId, payload);
+        showToast("Cập nhật banner thành công", "success");
       }
-
-      alert("Thành công");
 
       setMode("list");
       fetchData();
     } catch (err) {
       console.error(err);
-      alert(err.message || "Lỗi");
+
+      let message = "❌ Có lỗi xảy ra";
+
+      if (err.response) {
+        const status = err.response.status;
+
+        if (status === 500) {
+          message = "❌ Danh mục này đã có banner";
+        }
+
+        if (err.response.data?.message) {
+          message = err.response.data.message;
+        }
+      } else if (err.message) {
+        message = err.message;
+      }
+
+      showToast(message, "error");
     } finally {
       submitLock.current = false;
       setLoading(false);
@@ -150,12 +178,16 @@ function FeaturedPostAdmin() {
     if (!window.confirm("Bạn có chắc muốn xóa?")) return;
     await bannerApi.delete(id);
     fetchData();
+    showToast("Đã xóa banner", "success");
   };
 
   // ===== LIST =====
   if (mode === "list") {
     return (
       <div className="card">
+        {/* TOAST */}
+        {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
+
         <h2>🖼️ Quản lý banner</h2>
 
         <button className="btn btn-primary" onClick={handleCreate}>
@@ -204,6 +236,8 @@ function FeaturedPostAdmin() {
   // ===== FORM =====
   return (
     <div className="card">
+      {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
+
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} banner</h2>
 
       <div className="form-grid">

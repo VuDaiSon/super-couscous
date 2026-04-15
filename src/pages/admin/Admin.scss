@@ -204,6 +204,38 @@
     background: #e2e8f0;
   }
 }
+/* TOAST */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.3s ease;
+  z-index: 9999;
+}
+
+.toast.success {
+  background: #22c55e;
+}
+
+.toast.error {
+  background: #ef4444;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 /* ================= RESPONSIVE ADMIN ================= */
 
 /* TABLET */
