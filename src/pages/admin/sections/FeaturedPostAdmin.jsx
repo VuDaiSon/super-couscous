@@ -110,12 +110,14 @@ function FeaturedPostAdmin() {
     submitLock.current = true;
     setLoading(true);
 
+    let uploadedImage = null;
+
     try {
-      // VALIDATE
+      // ===== VALIDATE =====
       if (!preview) throw new Error("Chưa có ảnh");
       if (!form.categoryId) throw new Error("Chưa chọn danh mục");
 
-      // DUPLICATE CHECK
+      // ===== CHECK DUPLICATE =====
       if (mode === "create") {
         const existed = list.find(
           (item) => item.category?.categoryId === form.categoryId,
@@ -126,45 +128,38 @@ function FeaturedPostAdmin() {
         }
       }
 
-      let imageUrl = form.url;
-
-      // UPLOAD ONLY IF NEW FILE
+      // ===== UPLOAD FIRST =====
       if (file) {
-        imageUrl = await uploadToCloudinary(file);
+        uploadedImage = await uploadToCloudinary(file);
       }
 
+      // ===== CALL API AFTER UPLOAD =====
       const payload = {
         ...form,
-        url: imageUrl,
+        url: uploadedImage || form.url,
       };
 
       if (mode === "create") {
         await bannerApi.create(payload);
-        showToast("Tạo banner thành công", "success");
       } else {
         await bannerApi.update(selected.featuredPostId, payload);
-        showToast("Cập nhật banner thành công", "success");
       }
 
+      showToast("Thành công", "success");
       setMode("list");
       fetchData();
     } catch (err) {
       console.error(err);
 
+      // ⚠️ IMPORTANT: rollback logic
+      // (Cloudinary không auto rollback được → phải chấp nhận hoặc handle backend)
+
       let message = "❌ Có lỗi xảy ra";
 
-      if (err.response) {
-        const status = err.response.status;
+      if (err.message) message = err.message;
 
-        if (status === 500) {
-          message = "❌ Danh mục này đã có banner";
-        }
-
-        if (err.response.data?.message) {
-          message = err.response.data.message;
-        }
-      } else if (err.message) {
-        message = err.message;
+      if (err.response?.status === 500) {
+        message = "❌ Category đã có banner (OneToOne conflict)";
       }
 
       showToast(message, "error");
