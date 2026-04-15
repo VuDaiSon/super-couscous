@@ -44,8 +44,8 @@ function ProductAdmin() {
     fetchCategories();
   }, [page]);
 
-  const fetchProducts = async (page) => {
-    const res = await productApi.getAll(page);
+  const fetchProducts = async (p) => {
+    const res = await productApi.getAll(p);
     setProducts(res.data?.data || []);
     setTotalPages(res.data?.totalPage || 1);
   };
@@ -100,49 +100,14 @@ function ProductAdmin() {
 
     setMainPreview(data.mainImage);
     setImagesPreview(data.image || []);
-    setMainFile(null);
-    setImageFiles([]);
-
     setMode("edit");
   };
 
-  // ===== IMAGE =====
-  const handleMainImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setMainFile(file);
-    setMainPreview(URL.createObjectURL(file));
-  };
-
-  const handleImagesUpload = (e) => {
-    const files = Array.from(e.target.files);
-
-    setImageFiles((prev) => [...prev, ...files]);
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setImagesPreview((prev) => [...prev, ...previews]);
-  };
-
-  const handleRemoveImage = (index) => {
-    const oldCount = form.image.length;
-
-    if (index < oldCount) {
-      const newImages = form.image.filter((_, i) => i !== index);
-      setForm((prev) => ({ ...prev, image: newImages }));
-    } else {
-      const fileIndex = index - oldCount;
-      setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
-    }
-
-    setImagesPreview((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // ===== CLOUDINARY =====
-  const uploadToCloudinary = async (file, folder) => {
+  const uploadToCloudinary = async (file) => {
     const data = new FormData();
     data.append("file", file);
     data.append("upload_preset", UPLOAD_PRESET);
-    data.append("folder", folder);
+    data.append("folder", "products");
 
     const res = await axios.post(
       `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
@@ -152,10 +117,8 @@ function ProductAdmin() {
     return res.data.secure_url;
   };
 
-  // ===== SUBMIT =====
   const handleSubmit = async () => {
     if (submitLock.current) return;
-
     submitLock.current = true;
     setLoading(true);
 
@@ -166,14 +129,11 @@ function ProductAdmin() {
       let imageUrls = form.image || [];
 
       if (mainFile) {
-        mainImageUrl = await uploadToCloudinary(mainFile, "products");
+        mainImageUrl = await uploadToCloudinary(mainFile);
       }
 
       if (imageFiles.length > 0) {
-        const uploads = imageFiles.map((file) =>
-          uploadToCloudinary(file, "products"),
-        );
-
+        const uploads = imageFiles.map(uploadToCloudinary);
         const newUrls = await Promise.all(uploads);
         imageUrls = [...imageUrls, ...newUrls];
       }
@@ -191,12 +151,11 @@ function ProductAdmin() {
       }
 
       alert("Thành công");
-
       setMode("list");
+      setPage(0);
       fetchProducts(0);
     } catch (err) {
-      console.error(err);
-      alert(err.message || "Lỗi");
+      alert(err.message);
     } finally {
       submitLock.current = false;
       setLoading(false);
@@ -204,12 +163,12 @@ function ProductAdmin() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa?")) return;
+    if (!window.confirm("Xóa sản phẩm?")) return;
     await productApi.admin.delete(id);
     fetchProducts(page);
   };
 
-  // ===== LIST =====
+  // ================= LIST =================
   if (mode === "list") {
     return (
       <div className="card">
@@ -224,7 +183,8 @@ function ProductAdmin() {
             <tr>
               <th>Tên</th>
               <th>Giá</th>
-              <th>Số lượng</th>
+              <th>SL</th>
+              <th>Màu</th>
               <th>Ảnh</th>
               <th></th>
             </tr>
@@ -236,6 +196,7 @@ function ProductAdmin() {
                 <td>{p.name}</td>
                 <td>{p.price}</td>
                 <td>{p.quantity}</td>
+                <td>{p.color}</td>
                 <td>
                   <img src={buildImageUrl(p.mainImage)} width="50" />
                 </td>
@@ -257,11 +218,40 @@ function ProductAdmin() {
             ))}
           </tbody>
         </table>
+
+        {/* PAGINATION */}
+        <div className="pagination">
+          <button
+            className="nav-btn"
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+          >
+            ◀
+          </button>
+
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              className={`page-number ${i === page ? "active" : ""}`}
+              onClick={() => setPage(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            className="nav-btn"
+            disabled={page === totalPages - 1}
+            onClick={() => setPage(page + 1)}
+          >
+            ▶
+          </button>
+        </div>
       </div>
     );
   }
 
-  // ===== FORM =====
+  // ================= FORM =================
   return (
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
@@ -272,14 +262,6 @@ function ProductAdmin() {
           <input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Mô tả</label>
-          <input
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
         </div>
 
@@ -310,7 +292,7 @@ function ProductAdmin() {
         </div>
 
         <div className="form-group">
-          <label>Độ tuổi</label>
+          <label>Tuổi</label>
           <input
             type="number"
             value={form.age}
@@ -325,8 +307,8 @@ function ProductAdmin() {
             onChange={(e) => setForm({ ...form, sex: e.target.value })}
           >
             <option value="UNISEX">UNISEX</option>
-            <option value="MALE">MALE</option>
-            <option value="FEMALE">FEMALE</option>
+            <option value="MALE">NAM</option>
+            <option value="FEMALE">NỮ</option>
           </select>
         </div>
 
@@ -346,39 +328,51 @@ function ProductAdmin() {
         </div>
 
         <div className="form-group">
+          <label>Mô tả</label>
+          <input
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+        </div>
+
+        <div className="form-group">
           <label>Ảnh chính</label>
-          <input type="file" onChange={handleMainImageUpload} />
+          <input
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              setMainFile(file);
+              setMainPreview(URL.createObjectURL(file));
+            }}
+          />
           {mainPreview && <img src={mainPreview} width="100" />}
         </div>
 
         <div className="form-group">
           <label>Ảnh phụ</label>
-          <input type="file" multiple onChange={handleImagesUpload} />
+          <input
+            type="file"
+            multiple
+            onChange={(e) => {
+              const files = Array.from(e.target.files);
+              setImageFiles(files);
+              setImagesPreview(files.map((f) => URL.createObjectURL(f)));
+            }}
+          />
           <div>
             {imagesPreview.map((img, i) => (
-              <div key={i}>
-                <img src={img} width="80" />
-                <button onClick={() => handleRemoveImage(i)}>X</button>
-              </div>
+              <img key={i} src={img} width="80" />
             ))}
           </div>
         </div>
       </div>
 
       <div style={{ marginTop: 20 }}>
-        <button
-          className="btn btn-primary"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
+        <button className="btn btn-primary" onClick={handleSubmit}>
           {loading ? "Đang xử lý..." : "Submit"}
         </button>
 
-        <button
-          className="btn btn-secondary"
-          onClick={() => setMode("list")}
-          style={{ marginLeft: 10 }}
-        >
+        <button className="btn btn-secondary" onClick={() => setMode("list")}>
           Quay lại
         </button>
       </div>
