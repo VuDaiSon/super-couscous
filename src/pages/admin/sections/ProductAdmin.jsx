@@ -5,7 +5,7 @@ import { buildImageUrl } from "../../../utils/image";
 import axios from "axios";
 
 const CLOUD_NAME = "dxohrnltp";
-const UPLOAD_PRESET = "upload_public";
+const UPLOAD_PRESET = "upload_public"; // unsigned preset
 
 function ProductAdmin() {
   const [products, setProducts] = useState([]);
@@ -55,9 +55,6 @@ function ProductAdmin() {
     setCategories(res.data?.data || []);
   };
 
-  // =============================
-  // SELECT / CREATE
-  // =============================
   const handleSelect = async (id) => {
     const res = await productApi.getById(id);
     const data = res.data;
@@ -108,9 +105,6 @@ function ProductAdmin() {
     setMode("create");
   };
 
-  // =============================
-  // IMAGE
-  // =============================
   const handleMainImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -142,9 +136,9 @@ function ProductAdmin() {
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // =============================
-  // CLOUDINARY
-  // =============================
+  // =========================
+  // 🔥 CLOUDINARY UPLOAD
+  // =========================
   const uploadToCloudinary = async (file, folder) => {
     const data = new FormData();
     data.append("file", file);
@@ -159,9 +153,6 @@ function ProductAdmin() {
     return res.data.secure_url;
   };
 
-  // =============================
-  // SUBMIT
-  // =============================
   const handleSubmit = async () => {
     if (submitLock.current) return;
 
@@ -177,10 +168,12 @@ function ProductAdmin() {
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
+      // upload main image
       if (mainFile) {
         mainImageUrl = await uploadToCloudinary(mainFile, "products");
       }
 
+      // upload multiple images
       if (imageFiles.length > 0) {
         const uploads = imageFiles.map((file) =>
           uploadToCloudinary(file, "products"),
@@ -216,18 +209,15 @@ function ProductAdmin() {
     }
   };
 
-  // =============================
-  // DELETE
-  // =============================
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa?")) return;
     await productApi.admin.delete(id);
     fetchProducts(page);
   };
 
-  // =============================
-  // LIST (GIỮ NGUYÊN)
-  // =============================
+  // =========================
+  // LIST UI (GIỮ NGUYÊN)
+  // =========================
   if (mode === "list") {
     return (
       <div className="card">
@@ -284,33 +274,14 @@ function ProductAdmin() {
     );
   }
 
-  // =============================
-  // FORM (GIỮ GRID CỦA BẠN)
-  // =============================
+  // =========================
+  // FORM UI (GIỮ NGUYÊN)
+  // =========================
   return (
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
 
-      <div className="form-grid">{/* 👉 GIỮ NGUYÊN CHỖ NÀY CỦA BẠN */}</div>
-
-      {/* 👉 CHỈ THÊM IMAGE BLOCK */}
-      <div style={{ marginTop: 10 }}>
-        <input type="file" onChange={handleMainImageUpload} />
-        {mainPreview && <img src={mainPreview} width="100" />}
-      </div>
-
-      <div>
-        <input type="file" multiple onChange={handleImagesUpload} />
-
-        <div>
-          {imagesPreview.map((img, i) => (
-            <div key={i}>
-              <img src={img} width="80" />
-              <button onClick={() => handleRemoveImage(i)}>X</button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <div className="form-grid">{/* ⚠️ GIỮ NGUYÊN FORM CỦA BẠN */}</div>
 
       <div style={{ marginTop: 20 }}>
         <button onClick={handleSubmit} disabled={loading}>
