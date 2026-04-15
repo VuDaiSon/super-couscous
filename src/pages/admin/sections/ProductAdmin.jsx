@@ -18,6 +18,7 @@ function ProductAdmin() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [loading, setLoading] = useState(false);
+  const submitLock = useRef(false);
 
   const [mainFile, setMainFile] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
@@ -54,6 +55,9 @@ function ProductAdmin() {
     setCategories(res.data?.data || []);
   };
 
+  // =========================
+  // SELECT / CREATE
+  // =========================
   const handleSelect = async (id) => {
     const res = await productApi.getById(id);
     const data = res.data;
@@ -104,6 +108,9 @@ function ProductAdmin() {
     setMode("create");
   };
 
+  // =========================
+  // IMAGE HANDLER
+  // =========================
   const handleMainImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -135,7 +142,9 @@ function ProductAdmin() {
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // ===== 🔥 CLOUDINARY UPLOAD =====
+  // =========================
+  // CLOUDINARY UPLOAD
+  // =========================
   const uploadToCloudinary = async (file, folder) => {
     const data = new FormData();
     data.append("file", file);
@@ -150,8 +159,9 @@ function ProductAdmin() {
     return res.data.secure_url;
   };
 
-  const submitLock = useRef(false);
-
+  // =========================
+  // SUBMIT
+  // =========================
   const handleSubmit = async () => {
     if (submitLock.current) return;
 
@@ -167,18 +177,18 @@ function ProductAdmin() {
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
-      // ===== upload main =====
+      // upload main
       if (mainFile) {
         mainImageUrl = await uploadToCloudinary(mainFile, "products");
       }
 
-      // ===== upload multi =====
+      // upload multi
       if (imageFiles.length > 0) {
-        const uploadPromises = imageFiles.map((file) =>
+        const uploads = imageFiles.map((file) =>
           uploadToCloudinary(file, "products"),
         );
 
-        const newUrls = await Promise.all(uploadPromises);
+        const newUrls = await Promise.all(uploads);
         imageUrls = [...imageUrls, ...newUrls];
       }
 
@@ -194,10 +204,9 @@ function ProductAdmin() {
         await productApi.admin.update(selected.productId, payload);
       }
 
-      alert(mode === "create" ? "Tạo thành công" : "Cập nhật thành công");
+      alert("Thành công");
 
       setMode("list");
-      setPage(0);
       fetchProducts(0);
     } catch (err) {
       console.error(err);
@@ -208,13 +217,18 @@ function ProductAdmin() {
     }
   };
 
+  // =========================
+  // DELETE
+  // =========================
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa?")) return;
     await productApi.admin.delete(id);
     fetchProducts(page);
   };
 
-  // ===== LIST (GIỮ NGUYÊN) =====
+  // =========================
+  // LIST VIEW (GIỮ NGUYÊN)
+  // =========================
   if (mode === "list") {
     return (
       <div className="card">
@@ -271,12 +285,49 @@ function ProductAdmin() {
     );
   }
 
-  // ===== FORM (GIỮ NGUYÊN) =====
+  // =========================
+  // FORM VIEW (GIỮ LAYOUT)
+  // =========================
   return (
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
 
-      <div className="form-grid">{/* giữ nguyên form của bạn */}</div>
+      <div className="form-grid">
+        <input
+          placeholder="Tên"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+
+        <input
+          placeholder="Giá"
+          type="number"
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: e.target.value })}
+        />
+
+        <input
+          placeholder="Số lượng"
+          type="number"
+          value={form.quantity}
+          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+        />
+
+        <input type="file" onChange={handleMainImageUpload} />
+
+        {mainPreview && <img src={mainPreview} width="100" alt="" />}
+
+        <input type="file" multiple onChange={handleImagesUpload} />
+
+        <div>
+          {imagesPreview.map((img, i) => (
+            <div key={i}>
+              <img src={img} width="80" />
+              <button onClick={() => handleRemoveImage(i)}>X</button>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div style={{ marginTop: 20 }}>
         <button onClick={handleSubmit} disabled={loading}>
