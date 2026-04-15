@@ -55,9 +55,6 @@ function ProductAdmin() {
     setCategories(res.data?.data || []);
   };
 
-  // =========================
-  // SELECT / CREATE
-  // =========================
   const handleSelect = async (id) => {
     const res = await productApi.getById(id);
     const data = res.data;
@@ -108,9 +105,6 @@ function ProductAdmin() {
     setMode("create");
   };
 
-  // =========================
-  // IMAGE HANDLER
-  // =========================
   const handleMainImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -142,9 +136,7 @@ function ProductAdmin() {
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // =========================
-  // CLOUDINARY UPLOAD
-  // =========================
+  // 🔥 upload Cloudinary FE
   const uploadToCloudinary = async (file, folder) => {
     const data = new FormData();
     data.append("file", file);
@@ -159,9 +151,6 @@ function ProductAdmin() {
     return res.data.secure_url;
   };
 
-  // =========================
-  // SUBMIT
-  // =========================
   const handleSubmit = async () => {
     if (submitLock.current) return;
 
@@ -207,6 +196,7 @@ function ProductAdmin() {
       alert("Thành công");
 
       setMode("list");
+      setPage(0);
       fetchProducts(0);
     } catch (err) {
       console.error(err);
@@ -217,18 +207,13 @@ function ProductAdmin() {
     }
   };
 
-  // =========================
-  // DELETE
-  // =========================
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa?")) return;
     await productApi.admin.delete(id);
     fetchProducts(page);
   };
 
-  // =========================
-  // LIST VIEW (GIỮ NGUYÊN)
-  // =========================
+  // ================= LIST =================
   if (mode === "list") {
     return (
       <div className="card">
@@ -285,9 +270,7 @@ function ProductAdmin() {
     );
   }
 
-  // =========================
-  // FORM VIEW (GIỮ LAYOUT)
-  // =========================
+  // ================= FORM =================
   return (
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
@@ -299,27 +282,70 @@ function ProductAdmin() {
           onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
 
+        <textarea
+          placeholder="Mô tả"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+
         <input
+          type="number"
           placeholder="Giá"
-          type="number"
           value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
         />
 
         <input
-          placeholder="Số lượng"
           type="number"
+          placeholder="Số lượng"
           value={form.quantity}
-          onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, quantity: Number(e.target.value) })
+          }
         />
 
+        <input
+          placeholder="Màu sắc"
+          value={form.color}
+          onChange={(e) => setForm({ ...form, color: e.target.value })}
+        />
+
+        <input
+          type="number"
+          placeholder="Tuổi"
+          value={form.age}
+          onChange={(e) => setForm({ ...form, age: Number(e.target.value) })}
+        />
+
+        <select
+          value={form.sex}
+          onChange={(e) => setForm({ ...form, sex: e.target.value })}
+        >
+          <option value="UNISEX">Unisex</option>
+          <option value="MALE">Nam</option>
+          <option value="FEMALE">Nữ</option>
+        </select>
+
+        <select
+          value={form.categoryId}
+          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+        >
+          <option value="">Chọn danh mục</option>
+          {categories.map((c) => (
+            <option key={c.categoryId} value={c.categoryId}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        {/* MAIN IMAGE */}
         <input type="file" onChange={handleMainImageUpload} />
+        {mainPreview && <img src={mainPreview} width="100" />}
 
-        {mainPreview && <img src={mainPreview} width="100" alt="" />}
-
+        {/* MULTI IMAGE */}
         <input type="file" multiple onChange={handleImagesUpload} />
 
-        <div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {imagesPreview.map((img, i) => (
             <div key={i}>
               <img src={img} width="80" />
