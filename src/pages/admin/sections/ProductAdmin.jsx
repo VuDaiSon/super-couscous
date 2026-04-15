@@ -5,7 +5,7 @@ import { buildImageUrl } from "../../../utils/image";
 import axios from "axios";
 
 const CLOUD_NAME = "dxohrnltp";
-const UPLOAD_PRESET = "upload_public"; // unsigned preset
+const UPLOAD_PRESET = "upload_public";
 
 function ProductAdmin() {
   const [products, setProducts] = useState([]);
@@ -18,7 +18,6 @@ function ProductAdmin() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [loading, setLoading] = useState(false);
-  const submitLock = useRef(false);
 
   const [mainFile, setMainFile] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
@@ -136,9 +135,7 @@ function ProductAdmin() {
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // =========================
-  // 🔥 CLOUDINARY UPLOAD
-  // =========================
+  // ===== 🔥 CLOUDINARY UPLOAD =====
   const uploadToCloudinary = async (file, folder) => {
     const data = new FormData();
     data.append("file", file);
@@ -152,6 +149,8 @@ function ProductAdmin() {
 
     return res.data.secure_url;
   };
+
+  const submitLock = useRef(false);
 
   const handleSubmit = async () => {
     if (submitLock.current) return;
@@ -168,18 +167,18 @@ function ProductAdmin() {
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
-      // upload main image
+      // ===== upload main =====
       if (mainFile) {
         mainImageUrl = await uploadToCloudinary(mainFile, "products");
       }
 
-      // upload multiple images
+      // ===== upload multi =====
       if (imageFiles.length > 0) {
-        const uploads = imageFiles.map((file) =>
+        const uploadPromises = imageFiles.map((file) =>
           uploadToCloudinary(file, "products"),
         );
 
-        const newUrls = await Promise.all(uploads);
+        const newUrls = await Promise.all(uploadPromises);
         imageUrls = [...imageUrls, ...newUrls];
       }
 
@@ -215,9 +214,7 @@ function ProductAdmin() {
     fetchProducts(page);
   };
 
-  // =========================
-  // LIST UI (GIỮ NGUYÊN)
-  // =========================
+  // ===== LIST (GIỮ NGUYÊN) =====
   if (mode === "list") {
     return (
       <div className="card">
@@ -274,14 +271,12 @@ function ProductAdmin() {
     );
   }
 
-  // =========================
-  // FORM UI (GIỮ NGUYÊN)
-  // =========================
+  // ===== FORM (GIỮ NGUYÊN) =====
   return (
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
 
-      <div className="form-grid">{/* ⚠️ GIỮ NGUYÊN FORM CỦA BẠN */}</div>
+      <div className="form-grid">{/* giữ nguyên form của bạn */}</div>
 
       <div style={{ marginTop: 20 }}>
         <button onClick={handleSubmit} disabled={loading}>
