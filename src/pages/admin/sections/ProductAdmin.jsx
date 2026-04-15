@@ -79,6 +79,7 @@ function ProductAdmin() {
 
     setMainPreview(data.mainImage);
     setImagesPreview(data.image || []);
+
     setMainFile(null);
     setImageFiles([]);
 
@@ -142,7 +143,7 @@ function ProductAdmin() {
   };
 
   // =============================
-  // CLOUDINARY UPLOAD
+  // CLOUDINARY
   // =============================
   const uploadToCloudinary = async (file, folder) => {
     const data = new FormData();
@@ -176,12 +177,10 @@ function ProductAdmin() {
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
-      // upload main
       if (mainFile) {
         mainImageUrl = await uploadToCloudinary(mainFile, "products");
       }
 
-      // upload multi
       if (imageFiles.length > 0) {
         const uploads = imageFiles.map((file) =>
           uploadToCloudinary(file, "products"),
@@ -227,7 +226,7 @@ function ProductAdmin() {
   };
 
   // =============================
-  // LIST UI (GIỮ NGUYÊN)
+  // LIST (GIỮ NGUYÊN)
   // =============================
   if (mode === "list") {
     return (
@@ -286,58 +285,21 @@ function ProductAdmin() {
   }
 
   // =============================
-  // FORM UI (GIỮ GRID)
+  // FORM (GIỮ GRID CỦA BẠN)
   // =============================
   return (
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} sản phẩm</h2>
 
-      <div className="form-grid">
-        <input
-          placeholder="Tên"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
+      <div className="form-grid">{/* 👉 GIỮ NGUYÊN CHỖ NÀY CỦA BẠN */}</div>
 
-        <input
-          placeholder="Mô tả"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-
-        <input
-          type="number"
-          placeholder="Giá"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-        />
-
-        <input
-          type="number"
-          placeholder="Số lượng"
-          value={form.quantity}
-          onChange={(e) =>
-            setForm({ ...form, quantity: Number(e.target.value) })
-          }
-        />
-
-        <select
-          value={form.categoryId}
-          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-        >
-          <option value="">Chọn danh mục</option>
-          {categories.map((c) => (
-            <option key={c.categoryId} value={c.categoryId}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-
-        {/* MAIN IMAGE */}
+      {/* 👉 CHỈ THÊM IMAGE BLOCK */}
+      <div style={{ marginTop: 10 }}>
         <input type="file" onChange={handleMainImageUpload} />
         {mainPreview && <img src={mainPreview} width="100" />}
+      </div>
 
-        {/* MULTI IMAGE */}
+      <div>
         <input type="file" multiple onChange={handleImagesUpload} />
 
         <div>
