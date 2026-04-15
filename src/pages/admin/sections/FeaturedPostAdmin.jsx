@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import bannerApi from "../../../api/bannerApi";
-import axiosClient from "../../../api/axiosClient";
 import categoryApi from "../../../api/categoryApi";
+import axios from "axios";
 import { buildImageUrl } from "../../../utils/image";
+
+const CLOUD_NAME = "dxohrnltp";
+const UPLOAD_PRESET = "upload_public";
 
 function FeaturedPostAdmin() {
   const [list, setList] = useState([]);
@@ -11,8 +14,11 @@ function FeaturedPostAdmin() {
   const [mode, setMode] = useState("list");
   const [selected, setSelected] = useState(null);
 
-  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const submitLock = useRef(false);
+
   const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
 
   const [form, setForm] = useState({
     url: "",
@@ -34,6 +40,20 @@ function FeaturedPostAdmin() {
     setCategories(res.data?.data || []);
   };
 
+  const resetForm = () => {
+    setForm({
+      url: "",
+      categoryId: "",
+    });
+    setFile(null);
+    setPreview(null);
+  };
+
+  const handleCreate = () => {
+    resetForm();
+    setMode("create");
+  };
+
   const handleSelect = (item) => {
     setSelected(item);
 
@@ -48,19 +68,7 @@ function FeaturedPostAdmin() {
     setMode("edit");
   };
 
-  const handleCreate = () => {
-    setForm({
-      url: "",
-      categoryId: "",
-    });
-
-    setPreview(null);
-    setFile(null);
-
-    setMode("create");
-  };
-
-  // 🔥 chỉ preview
+  // ===== IMAGE =====
   const handleUpload = (e) => {
     const f = e.target.files[0];
     if (!f) return;
@@ -69,37 +77,51 @@ function FeaturedPostAdmin() {
     setPreview(URL.createObjectURL(f));
   };
 
-  // ================= SUBMIT =================
+  // ===== CLOUDINARY =====
+  const uploadToCloudinary = async (file) => {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", UPLOAD_PRESET);
+    data.append("folder", "banners");
+
+    const res = await axios.post(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      data,
+    );
+
+    return res.data.secure_url;
+  };
+
+  // ===== SUBMIT =====
   const handleSubmit = async () => {
-    if (!preview) return alert("Chưa có ảnh");
+    if (submitLock.current) return;
+
+    submitLock.current = true;
+    setLoading(true);
 
     try {
-      // 🔥 STEP 1: CHECK TRƯỚC (QUAN TRỌNG NHẤT)
+      // 🔥 VALIDATE
+      if (!preview) throw new Error("Chưa có ảnh");
+      if (!form.categoryId) throw new Error("Chưa chọn danh mục");
+
+      // 🔥 CHECK DUPLICATE
       if (mode === "create") {
         const existed = list.find(
           (item) => item.category?.categoryId === form.categoryId,
         );
 
         if (existed) {
-          return alert("❌ Category này đã có banner rồi!");
+          throw new Error("Category này đã có banner");
         }
       }
 
       let imageUrl = form.url;
 
-      // 🔥 STEP 2: CHỈ upload khi chắc chắn OK
+      // 🔥 upload nếu có file mới
       if (file) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await axiosClient.post("/files/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        imageUrl = res.data;
+        imageUrl = await uploadToCloudinary(file);
       }
 
-      // 🔥 STEP 3: CALL API
       const payload = {
         ...form,
         url: imageUrl,
@@ -107,33 +129,38 @@ function FeaturedPostAdmin() {
 
       if (mode === "create") {
         await bannerApi.create(payload);
-        alert("Tạo thành công");
       } else {
         await bannerApi.update(selected.featuredPostId, payload);
-        alert("Cập nhật thành công");
       }
+
+      alert("Thành công");
 
       setMode("list");
       fetchData();
     } catch (err) {
-      console.log(err);
-      alert("❌ Lỗi tạo banner");
+      console.error(err);
+      alert(err.message || "Lỗi");
+    } finally {
+      submitLock.current = false;
+      setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Xóa banner?")) return;
+    if (!window.confirm("Bạn có chắc muốn xóa?")) return;
     await bannerApi.delete(id);
     fetchData();
   };
 
-  // ================= LIST =================
+  // ===== LIST =====
   if (mode === "list") {
     return (
       <div className="card">
-        <h2>🖼️ Banners</h2>
+        <h2>🖼️ Quản lý banner</h2>
 
-        <button onClick={handleCreate}>+ Thêm banner</button>
+        <button className="btn btn-primary" onClick={handleCreate}>
+          + Thêm banner
+        </button>
 
         <table className="admin-table">
           <thead>
@@ -148,12 +175,21 @@ function FeaturedPostAdmin() {
             {list.map((item) => (
               <tr key={item.featuredPostId}>
                 <td>
-                  <img src={buildImageUrl(item.url)} width="120" alt="" />
+                  <img src={buildImageUrl(item.url)} width="120" />
                 </td>
                 <td>{item.category?.name || "-"}</td>
                 <td>
-                  <button onClick={() => handleSelect(item)}>Sửa</button>
-                  <button onClick={() => handleDelete(item.featuredPostId)}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => handleSelect(item)}
+                  >
+                    Sửa
+                  </button>
+
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDelete(item.featuredPostId)}
+                  >
                     Xóa
                   </button>
                 </td>
@@ -165,43 +201,57 @@ function FeaturedPostAdmin() {
     );
   }
 
-  // ================= FORM =================
+  // ===== FORM =====
   return (
     <div className="card">
-      <h2>{mode === "create" ? "Thêm" : "Sửa"} banner</h2>
+      <h2>{mode === "create" ? "Thêm" : "Chỉnh sửa"} banner</h2>
 
-      <div className="form-group">
-        <label>Danh mục</label>
-        <select
-          value={form.categoryId}
-          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-        >
-          <option value="">-- chọn --</option>
-          {categories.map((c) => (
-            <option key={c.categoryId} value={c.categoryId}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label>Ảnh banner</label>
-
-        <div className="upload-hint">
-          📏 Tỉ lệ quy định: <b>16 : 5.5</b> (1920 x 660px)
+      <div className="form-grid">
+        <div className="form-group">
+          <label>Danh mục</label>
+          <select
+            value={form.categoryId}
+            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+          >
+            <option value="">-- chọn --</option>
+            {categories.map((c) => (
+              <option key={c.categoryId} value={c.categoryId}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <input type="file" onChange={handleUpload} />
+        <div className="form-group">
+          <label>Ảnh banner</label>
 
-        {preview && <img src={preview} width="200" alt="" />}
+          <div style={{ fontSize: 12, color: "#64748b" }}>
+            📏 Tỉ lệ: <b>16 : 5.5</b> (1920 x 660px)
+          </div>
+
+          <input type="file" onChange={handleUpload} />
+
+          {preview && <img src={preview} width="200" />}
+        </div>
       </div>
 
-      <button onClick={handleSubmit}>
-        {mode === "create" ? "Tạo" : "Cập nhật"}
-      </button>
+      <div style={{ marginTop: 20 }}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? "Đang xử lý..." : "Submit"}
+        </button>
 
-      <button onClick={() => setMode("list")}>Quay lại</button>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setMode("list")}
+          style={{ marginLeft: 10 }}
+        >
+          Quay lại
+        </button>
+      </div>
     </div>
   );
 }
