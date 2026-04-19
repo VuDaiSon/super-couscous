@@ -11,7 +11,7 @@ function Login() {
   const hasShown = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [loginLoading, setLoginLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -31,7 +31,11 @@ function Login() {
 
   // 🔥 LOGIN
   const handleLogin = async () => {
+    if (loginLoading) return; // 🔥 chặn spam
+
     try {
+      setLoginLoading(true);
+
       const res = await authApi.login(email, password);
 
       const userId = res.data?.data?.userId;
@@ -45,6 +49,8 @@ function Login() {
     } catch (err) {
       const msg = err.response?.data?.message || "Sai email hoặc mật khẩu!";
       alert(msg);
+    } finally {
+      setLoginLoading(false); // 🔥 mở lại button
     }
   };
 
@@ -87,8 +93,9 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button onClick={handleLogin}>LOGIN</button>
-
+          <button onClick={handleLogin} disabled={loginLoading}>
+            {loginLoading ? "Đang đăng nhập..." : "LOGIN"}
+          </button>
           <div className="login-actions">
             <span onClick={() => navigate("/register")}>Tạo tài khoản</span>
 
