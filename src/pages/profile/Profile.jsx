@@ -72,6 +72,7 @@ function Profile() {
     if (!file) {
       setAvatarFile(null);
       setAvatarPreview(form.avatar || null);
+      e.target.value = ""; // thêm dòng này
       return;
     }
     if (!file.type.startsWith("image/")) {
