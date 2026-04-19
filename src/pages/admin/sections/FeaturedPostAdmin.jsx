@@ -168,12 +168,7 @@ function FeaturedPostAdmin() {
         } else if (data?.message) {
           errorMessage = data.message;
         } else {
-          errorMessage = "Dữ liệu không hợp lệ hoặc đã tồn tại";
-        }
-
-        // map thêm cho rõ UX
-        if (err.response.status === 409) {
-          errorMessage = "Danh mục này đã có banner";
+          errorMessage = "Dữ liệu không hợp lệ hoặc Danh mục này đã có banner";
         }
       }
 
