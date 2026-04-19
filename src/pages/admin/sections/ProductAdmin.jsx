@@ -110,22 +110,44 @@ function ProductAdmin() {
   // ===== IMAGE =====
   const handleMainImageUpload = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+
+    if (!file) {
+      setMainFile(null);
+      setMainPreview(form.mainImage || null);
+      return;
+    }
+
+    // ❗ cleanup preview cũ
+    if (mainPreview && mainPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(mainPreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
 
     setMainFile(file);
-    setMainPreview(URL.createObjectURL(file));
+    setMainPreview(previewUrl);
   };
 
   const handleImagesUpload = (e) => {
     const files = Array.from(e.target.files);
 
-    setImageFiles((prev) => [...prev, ...files]);
+    if (files.length === 0) return;
+
     const previews = files.map((file) => URL.createObjectURL(file));
+
+    setImageFiles((prev) => [...prev, ...files]);
     setImagesPreview((prev) => [...prev, ...previews]);
   };
 
   const handleRemoveImage = (index) => {
     const oldCount = form.image.length;
+
+    const preview = imagesPreview[index];
+
+    // ❗ nếu là blob thì revoke
+    if (preview && preview.startsWith("blob:")) {
+      URL.revokeObjectURL(preview);
+    }
 
     if (index < oldCount) {
       const newImages = form.image.filter((_, i) => i !== index);
@@ -164,8 +186,9 @@ function ProductAdmin() {
     let uploadedImages = [];
 
     try {
-      if (!mainPreview) throw new Error("Thiếu ảnh chính");
-
+      if (!mainFile && !form.mainImage) {
+        throw new Error("Thiếu ảnh chính");
+      }
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
@@ -199,7 +222,18 @@ function ProductAdmin() {
       }
 
       alert("Thành công");
+      if (mainPreview && mainPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(mainPreview);
+      }
 
+      imagesPreview.forEach((img) => {
+        if (img.startsWith("blob:")) {
+          URL.revokeObjectURL(img);
+        }
+      });
+
+      // reset toàn bộ form
+      resetForm();
       setMode("list");
       setPage(0);
       fetchProducts(0);
