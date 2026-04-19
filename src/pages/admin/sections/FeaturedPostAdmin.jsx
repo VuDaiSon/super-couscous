@@ -157,7 +157,12 @@ function FeaturedPostAdmin() {
         }
       }
 
-      showToast(err.message || "Lỗi", "error");
+      const errorMessage =
+        err?.response?.data?.message || // BE custom message
+        err?.response?.data || // fallback BE
+        "Có lỗi xảy ra, vui lòng thử lại";
+
+      showToast(errorMessage, "error");
     } finally {
       submitLock.current = false;
       setLoading(false);
