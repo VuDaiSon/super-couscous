@@ -158,9 +158,9 @@ function FeaturedPostAdmin() {
       }
 
       const errorMessage =
-        err?.response?.data?.message || // BE custom message
-        err?.response?.data || // fallback BE
-        "Có lỗi xảy ra, vui lòng thử lại";
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "Lỗi: Category này đã được gắn với banner khác";
 
       showToast(errorMessage, "error");
     } finally {
