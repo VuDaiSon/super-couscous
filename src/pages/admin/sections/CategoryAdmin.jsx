@@ -93,7 +93,18 @@ function CategoryAdmin() {
   // ================= IMAGE =================
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+
+    // ❗ nếu user cancel → reset
+    if (!file) {
+      setImageFile(null);
+      setPreview(null);
+      return;
+    }
+
+    // ❗ revoke URL cũ để tránh leak memory
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
 
     setImageFile(file);
     setPreview(URL.createObjectURL(file));
