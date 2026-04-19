@@ -28,7 +28,6 @@ function CategoryAdmin() {
   };
   const [loading, setLoading] = useState(false);
   const submitLock = useRef(false);
-
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = "success") => {

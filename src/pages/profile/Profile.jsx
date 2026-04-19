@@ -10,6 +10,7 @@ import { buildImageUrl } from "../../utils/image";
 import Footer from "../../components/footer/Footer";
 
 function Profile() {
+  const [fileName, setFileName] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
@@ -68,18 +69,18 @@ function Profile() {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
 
-    // user cancel
     if (!file) {
       setAvatarFile(null);
       setAvatarPreview(form.avatar || null);
-      e.target.value = ""; // thêm dòng này
+      setFileName(""); // reset name
+      e.target.value = "";
       return;
     }
+
     if (!file.type.startsWith("image/")) {
       return alert("File phải là ảnh");
     }
 
-    // 🔥 cleanup preview cũ
     if (avatarPreview && avatarPreview.startsWith("blob:")) {
       URL.revokeObjectURL(avatarPreview);
     }
@@ -88,11 +89,10 @@ function Profile() {
 
     setAvatarFile(file);
     setAvatarPreview(previewUrl);
+    setFileName(file.name); // 🔥 LƯU TÊN FILE
 
-    // 🔥 FIX giống banner
-    e.target.value = "";
+    e.target.value = ""; // vẫn giữ
   };
-
   // ================= UPDATE =================
   const handleUpdate = async () => {
     const userId = localStorage.getItem("userId");
@@ -232,6 +232,7 @@ function Profile() {
 
             <input type="file" onChange={handleAvatarChange} />
 
+            {fileName && <div className="file-name">📁 {fileName}</div>}
             <div className="hint">📏 Khuyến nghị: 1:1 (500x500px)</div>
           </div>
 

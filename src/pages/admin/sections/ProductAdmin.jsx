@@ -9,6 +9,8 @@ const CLOUD_NAME = "dxohrnltp";
 const UPLOAD_PRESET = "upload_public";
 
 function ProductAdmin() {
+  const [imageFileNames, setImageFileNames] = useState([]);
+  const [fileName, setFileName] = useState("");
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -112,13 +114,13 @@ function ProductAdmin() {
     const file = e.target.files[0];
 
     if (!file) {
-      // 🔥 revoke preview cũ nếu là blob
       if (mainPreview && mainPreview.startsWith("blob:")) {
         URL.revokeObjectURL(mainPreview);
       }
 
       setMainFile(null);
       setMainPreview(form.mainImage || null);
+      setFileName(""); // 🔥 reset tên
       return;
     }
 
@@ -130,8 +132,8 @@ function ProductAdmin() {
 
     setMainFile(file);
     setMainPreview(previewUrl);
+    setFileName(file.name);
 
-    // 🔥 FIX QUAN TRỌNG
     e.target.value = "";
   };
 
@@ -141,19 +143,19 @@ function ProductAdmin() {
     if (files.length === 0) return;
 
     const previews = files.map((file) => URL.createObjectURL(file));
+    const names = files.map((file) => file.name);
 
     setImageFiles((prev) => [...prev, ...files]);
     setImagesPreview((prev) => [...prev, ...previews]);
+    setImageFileNames((prev) => [...prev, ...names]); // 🔥 thêm dòng này
 
     e.target.value = "";
   };
 
   const handleRemoveImage = (index) => {
     const oldCount = form.image.length;
-
     const preview = imagesPreview[index];
 
-    // ❗ nếu là blob thì revoke
     if (preview && preview.startsWith("blob:")) {
       URL.revokeObjectURL(preview);
     }
@@ -164,6 +166,7 @@ function ProductAdmin() {
     } else {
       const fileIndex = index - oldCount;
       setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+      setImageFileNames((prev) => prev.filter((_, i) => i !== fileIndex)); // 🔥 FIX
     }
 
     setImagesPreview((prev) => prev.filter((_, i) => i !== index));
@@ -443,16 +446,23 @@ function ProductAdmin() {
         <div className="form-group">
           <label>Ảnh chính</label>
           <input type="file" onChange={handleMainImageUpload} />
+          {fileName && <div className="file-name">📁 {fileName}</div>}
           {mainPreview && <img src={mainPreview} width="100" />}
         </div>
 
         <div className="form-group">
           <label>Ảnh phụ</label>
           <input type="file" multiple onChange={handleImagesUpload} />
+
           <div>
             {imagesPreview.map((img, i) => (
               <div key={i}>
                 <img src={img} width="80" />
+
+                {imageFileNames[i] && (
+                  <div className="file-name">{imageFileNames[i]}</div>
+                )}
+
                 <button onClick={() => handleRemoveImage(i)}>X</button>
               </div>
             ))}
