@@ -39,7 +39,13 @@ function Profile() {
     window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
-
+  useEffect(() => {
+    return () => {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, []);
   const closeModal = () => {
     setShowPasswordModal(false);
     setPassword({ oldPassword: "", newPassword: "" });
@@ -61,14 +67,29 @@ function Profile() {
   // ================= AVATAR =================
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
 
+    // user cancel
+    if (!file) {
+      setAvatarFile(null);
+      setAvatarPreview(form.avatar || null);
+      return;
+    }
     if (!file.type.startsWith("image/")) {
       return alert("File phải là ảnh");
     }
 
+    // 🔥 cleanup preview cũ
+    if (avatarPreview && avatarPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+
     setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    setAvatarPreview(previewUrl);
+
+    // 🔥 FIX giống banner
+    e.target.value = "";
   };
 
   // ================= UPDATE =================
@@ -115,6 +136,9 @@ function Profile() {
       await authApi.updateProfile(userId, payload);
 
       alert("Cập nhật thành công!");
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
 
       setAvatarFile(null);
       setAvatarPreview(avatarUrl);
@@ -137,8 +161,10 @@ function Profile() {
           console.log("Không xóa được ảnh rác");
         }
       }
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
 
-      // 🔥 rollback UI
       setAvatarPreview(form.avatar);
       setAvatarFile(null);
     }
@@ -191,7 +217,9 @@ function Profile() {
             <img
               src={
                 avatarPreview
-                  ? buildImageUrl(avatarPreview)
+                  ? avatarPreview.startsWith("blob:")
+                    ? avatarPreview
+                    : buildImageUrl(avatarPreview)
                   : "/images/default-avatar.jpg"
               }
               alt="avatar"
