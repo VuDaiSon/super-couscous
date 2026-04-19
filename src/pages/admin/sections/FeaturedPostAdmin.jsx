@@ -156,11 +156,26 @@ function FeaturedPostAdmin() {
           console.error("❌ Cleanup failed:", cleanupErr);
         }
       }
+      console.error("🔥 API ERROR:", err);
 
-      const errorMessage =
-        err?.response?.data?.message ||
-        err?.response?.data ||
-        "Lỗi: Category này đã được gắn với banner khác";
+      let errorMessage = "Có lỗi xảy ra";
+
+      if (err.response) {
+        const data = err.response.data;
+
+        if (typeof data === "string") {
+          errorMessage = data;
+        } else if (data?.message) {
+          errorMessage = data.message;
+        } else {
+          errorMessage = "Dữ liệu không hợp lệ hoặc đã tồn tại";
+        }
+
+        // map thêm cho rõ UX
+        if (err.response.status === 409) {
+          errorMessage = "Danh mục này đã có banner";
+        }
+      }
 
       showToast(errorMessage, "error");
     } finally {
