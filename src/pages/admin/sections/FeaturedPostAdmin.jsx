@@ -9,7 +9,6 @@ const CLOUD_NAME = "dxohrnltp";
 const UPLOAD_PRESET = "upload_public";
 
 function FeaturedPostAdmin() {
-  const [uploadedUrl, setUploadedUrl] = useState(null);
   const [list, setList] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -33,6 +32,13 @@ function FeaturedPostAdmin() {
     fetchData();
     fetchCategories();
   }, []);
+  useEffect(() => {
+    return () => {
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+    };
+  }, [preview]);
 
   const fetchData = async () => {
     const res = await bannerApi.getAll();
@@ -54,6 +60,10 @@ function FeaturedPostAdmin() {
   };
 
   const resetForm = () => {
+    if (preview && preview.startsWith("blob:")) {
+      URL.revokeObjectURL(preview);
+    }
+
     setForm({
       url: "",
       categoryId: "",
@@ -68,6 +78,11 @@ function FeaturedPostAdmin() {
   };
 
   const handleSelect = (item) => {
+    // 🔥 cleanup preview cũ
+    if (preview && preview.startsWith("blob:")) {
+      URL.revokeObjectURL(preview);
+    }
+
     setSelected(item);
 
     setForm({
@@ -84,10 +99,24 @@ function FeaturedPostAdmin() {
   // ===== IMAGE =====
   const handleUpload = (e) => {
     const f = e.target.files[0];
-    if (!f) return;
+
+    if (!f) {
+      setFile(null);
+      setPreview(form.url || null);
+      return;
+    }
+
+    if (preview && preview.startsWith("blob:")) {
+      URL.revokeObjectURL(preview);
+    }
+
+    const previewUrl = URL.createObjectURL(f);
 
     setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setPreview(previewUrl);
+
+    // 🔥 FIX QUAN TRỌNG
+    e.target.value = "";
   };
 
   // ===== CLOUDINARY =====
@@ -115,7 +144,9 @@ function FeaturedPostAdmin() {
     let uploadedImage = null;
 
     try {
-      if (!preview) throw new Error("Chưa có ảnh");
+      if (!file && !form.url) {
+        throw new Error("Chưa có ảnh");
+      }
       if (!form.categoryId) throw new Error("Chưa chọn danh mục");
 
       if (mode === "create") {
@@ -128,7 +159,6 @@ function FeaturedPostAdmin() {
       // upload
       if (file) {
         uploadedImage = await uploadToCloudinary(file);
-        setUploadedUrl(uploadedImage);
       }
 
       const payload = {
@@ -141,6 +171,15 @@ function FeaturedPostAdmin() {
         : bannerApi.update(selected.featuredPostId, payload));
 
       showToast("Thành công", "success");
+
+      // ❗ cleanup preview blob tránh leak + bug UI
+      if (preview && preview.startsWith("blob:")) {
+        URL.revokeObjectURL(preview);
+      }
+
+      // reset form
+      resetForm();
+
       setMode("list");
       fetchData();
     } catch (err) {

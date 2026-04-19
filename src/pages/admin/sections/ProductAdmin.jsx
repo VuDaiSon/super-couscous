@@ -112,12 +112,16 @@ function ProductAdmin() {
     const file = e.target.files[0];
 
     if (!file) {
+      // 🔥 revoke preview cũ nếu là blob
+      if (mainPreview && mainPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(mainPreview);
+      }
+
       setMainFile(null);
       setMainPreview(form.mainImage || null);
       return;
     }
 
-    // ❗ cleanup preview cũ
     if (mainPreview && mainPreview.startsWith("blob:")) {
       URL.revokeObjectURL(mainPreview);
     }
@@ -126,6 +130,9 @@ function ProductAdmin() {
 
     setMainFile(file);
     setMainPreview(previewUrl);
+
+    // 🔥 FIX QUAN TRỌNG
+    e.target.value = "";
   };
 
   const handleImagesUpload = (e) => {
@@ -137,6 +144,8 @@ function ProductAdmin() {
 
     setImageFiles((prev) => [...prev, ...files]);
     setImagesPreview((prev) => [...prev, ...previews]);
+
+    e.target.value = "";
   };
 
   const handleRemoveImage = (index) => {
