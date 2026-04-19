@@ -1,9 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import categoryApi from "../../../api/categoryApi";
 import axiosClient from "../../../api/axiosClient";
 import { buildImageUrl } from "../../../utils/image";
+import axios from "axios";
+import fileApi from "../../../api/fileApi";
+
+const CLOUD_NAME = "dxohrnltp";
+const UPLOAD_PRESET = "upload_public";
 
 function CategoryAdmin() {
+  // ===== CLOUDINARY =====
+  const uploadToCloudinary = async (file) => {
+    const data = new FormData();
+    data.append("file", file);
+    data.append("upload_preset", UPLOAD_PRESET);
+    data.append("folder", "categories");
+
+    const res = await axios.post(
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+      data,
+    );
+
+    return {
+      url: res.data.secure_url,
+      publicId: res.data.public_id,
+    };
+  };
+  const [loading, setLoading] = useState(false);
+  const submitLock = useRef(false);
+
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const [categories, setCategories] = useState([]);
 
   const [mode, setMode] = useState("list");
@@ -69,36 +101,66 @@ function CategoryAdmin() {
 
   // ================= SUBMIT =================
   const handleSubmit = async () => {
-    let imageUrl = form.image;
+    if (submitLock.current) return;
 
-    // 🔥 chỉ upload nếu có file mới
-    if (imageFile) {
-      const formData = new FormData();
-      formData.append("file", imageFile);
+    submitLock.current = true;
+    setLoading(true);
 
-      const res = await axiosClient.post("/files/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+    let uploadedImage = null;
 
-      imageUrl = res.data;
+    try {
+      if (!form.name) throw new Error("Thiếu tên danh mục");
+
+      let imageUrl = form.image;
+
+      // ✅ upload 1 lần duy nhất
+      if (imageFile) {
+        uploadedImage = await uploadToCloudinary(imageFile);
+        imageUrl = uploadedImage.url;
+      }
+
+      const payload = {
+        ...form,
+        image: imageUrl,
+      };
+
+      if (mode === "create") {
+        await categoryApi.create(payload);
+      } else {
+        await categoryApi.update(selected.categoryId, payload);
+      }
+
+      showToast("Thành công");
+
+      setMode("list");
+      setPage(0);
+      fetchCategories(0);
+    } catch (err) {
+      // 🔥 CLEANUP ẢNH RÁC (QUAN TRỌNG NHẤT)
+      if (uploadedImage?.url) {
+        try {
+          await fileApi.delete(uploadedImage.url); // ✅ gửi URL cho BE
+        } catch (cleanupErr) {
+          console.error("❌ Cleanup fail", cleanupErr);
+        }
+      }
+
+      let msg = "Có lỗi xảy ra";
+
+      if (err.response?.data) {
+        msg =
+          typeof err.response.data === "string"
+            ? err.response.data
+            : err.response.data.message || msg;
+      } else {
+        msg = err.message || msg;
+      }
+
+      showToast(msg, "error");
+    } finally {
+      submitLock.current = false;
+      setLoading(false);
     }
-
-    const payload = {
-      ...form,
-      image: imageUrl,
-    };
-
-    if (mode === "create") {
-      await categoryApi.create(payload);
-      alert("Tạo thành công");
-    } else {
-      await categoryApi.update(selected.categoryId, payload);
-      alert("Cập nhật thành công");
-    }
-
-    setMode("list");
-    setPage(0);
-    fetchCategories(0);
   };
 
   const handleDelete = async (id) => {
@@ -111,10 +173,12 @@ function CategoryAdmin() {
   if (mode === "list") {
     return (
       <div className="card">
+        {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
         <h2>📂 Danh mục</h2>
 
-        <button onClick={handleCreate}>+ Thêm</button>
-
+        <button className="btn btn-primary" onClick={handleCreate}>
+          + Thêm
+        </button>
         <table className="admin-table">
           <thead>
             <tr>
@@ -132,10 +196,17 @@ function CategoryAdmin() {
                   <img src={buildImageUrl(c.image)} width="50" alt="" />
                 </td>
                 <td>
-                  <button onClick={() => handleSelect(c.categoryId)}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => handleSelect(c.categoryId)}
+                  >
                     Sửa
                   </button>
-                  <button onClick={() => handleDelete(c.categoryId)}>
+
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleDelete(c.categoryId)}
+                  >
                     Xóa
                   </button>
                 </td>
@@ -144,20 +215,31 @@ function CategoryAdmin() {
           </tbody>
         </table>
 
-        <div style={{ marginTop: 20 }}>
-          <button disabled={page === 0} onClick={() => setPage(page - 1)}>
-            ◀ Prev
+        <div className="pagination">
+          <button
+            className="nav-btn"
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+          >
+            ◀
           </button>
 
-          <span style={{ margin: "0 10px" }}>
-            Page {page + 1} / {totalPages}
-          </span>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              className={`page-number ${i === page ? "active" : ""}`}
+              onClick={() => setPage(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
 
           <button
+            className="nav-btn"
             disabled={page + 1 >= totalPages}
             onClick={() => setPage(page + 1)}
           >
-            Next ▶
+            ▶
           </button>
         </div>
       </div>
@@ -169,19 +251,36 @@ function CategoryAdmin() {
     <div className="card">
       <h2>{mode === "create" ? "Thêm" : "Sửa"} danh mục</h2>
 
-      <input
-        placeholder="Tên"
-        value={form.name}
-        onChange={(e) => setForm({ ...form, name: e.target.value })}
-      />
+      <div className="form-grid">
+        <div className="form-group">
+          <label>Tên danh mục</label>
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+        </div>
 
-      <input type="file" onChange={handleImageUpload} />
+        <div className="form-group">
+          <label>Ảnh</label>
+          <input type="file" onChange={handleImageUpload} />
+          {preview && <img src={preview} width="120" />}
+        </div>
+      </div>
 
-      {preview && <img src={preview} width="120" alt="" />}
+      <div style={{ marginTop: 20 }}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSubmit}
+          disabled={loading}
+        >
+          {loading ? "Đang xử lý..." : "Lưu"}
+        </button>
 
-      <div style={{ marginTop: 10 }}>
-        <button onClick={handleSubmit}>Lưu</button>
-        <button onClick={() => setMode("list")} style={{ marginLeft: 10 }}>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setMode("list")}
+          style={{ marginLeft: 10 }}
+        >
           Quay lại
         </button>
       </div>
