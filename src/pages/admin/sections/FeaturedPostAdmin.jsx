@@ -3,6 +3,7 @@ import bannerApi from "../../../api/bannerApi";
 import categoryApi from "../../../api/categoryApi";
 import axios from "axios";
 import { buildImageUrl } from "../../../utils/image";
+import fileApi from "../../../api/fileApi";
 
 const CLOUD_NAME = "dxohrnltp";
 const UPLOAD_PRESET = "upload_public";
@@ -147,7 +148,13 @@ function FeaturedPostAdmin() {
       // thì ảnh đã "rác" → chỉ có thể log hoặc cleanup backend
 
       if (uploadedImage) {
-        console.warn("⚠️ Image uploaded but request failed:", uploadedImage);
+        console.warn("⚠️ Cleanup orphan image:", uploadedImage);
+
+        try {
+          await fileApi.delete(uploadedImage);
+        } catch (cleanupErr) {
+          console.error("❌ Cleanup failed:", cleanupErr);
+        }
       }
 
       showToast(err.message || "Lỗi", "error");
