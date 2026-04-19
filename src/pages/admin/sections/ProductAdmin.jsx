@@ -3,6 +3,7 @@ import productApi from "../../../api/productApi";
 import categoryApi from "../../../api/categoryApi";
 import { buildImageUrl } from "../../../utils/image";
 import axios from "axios";
+import fileApi from "../../../api/fileApi";
 
 const CLOUD_NAME = "dxohrnltp";
 const UPLOAD_PRESET = "upload_public";
@@ -159,23 +160,30 @@ function ProductAdmin() {
     submitLock.current = true;
     setLoading(true);
 
+    // 🔥 lưu toàn bộ ảnh đã upload
+    let uploadedImages = [];
+
     try {
       if (!mainPreview) throw new Error("Thiếu ảnh chính");
 
       let mainImageUrl = form.mainImage;
       let imageUrls = form.image || [];
 
+      // ===== upload main =====
       if (mainFile) {
-        mainImageUrl = await uploadToCloudinary(mainFile, "products");
+        const url = await uploadToCloudinary(mainFile, "products");
+        mainImageUrl = url;
+        uploadedImages.push(url); // 👈 lưu để cleanup
       }
 
+      // ===== upload multiple =====
       if (imageFiles.length > 0) {
-        const uploads = imageFiles.map((file) =>
-          uploadToCloudinary(file, "products"),
+        const uploads = await Promise.all(
+          imageFiles.map((file) => uploadToCloudinary(file, "products")),
         );
 
-        const newUrls = await Promise.all(uploads);
-        imageUrls = [...imageUrls, ...newUrls];
+        imageUrls = [...imageUrls, ...uploads];
+        uploadedImages.push(...uploads); // 👈 lưu toàn bộ
       }
 
       const payload = {
@@ -193,8 +201,24 @@ function ProductAdmin() {
       alert("Thành công");
 
       setMode("list");
+      setPage(0);
       fetchProducts(0);
     } catch (err) {
+      // 🔥🔥🔥 CLEANUP TOÀN BỘ ẢNH RÁC
+      if (uploadedImages.length > 0) {
+        console.warn("⚠️ Cleanup orphan images:", uploadedImages);
+
+        await Promise.all(
+          uploadedImages.map(async (url) => {
+            try {
+              await fileApi.delete(url);
+            } catch (e) {
+              console.error("❌ Cleanup failed:", url, e);
+            }
+          }),
+        );
+      }
+
       console.error(err);
       alert(err.message || "Lỗi");
     } finally {
