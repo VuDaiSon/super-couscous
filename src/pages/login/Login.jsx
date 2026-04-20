@@ -93,8 +93,13 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button onClick={handleLogin} disabled={loginLoading}>
-            {loginLoading ? "Đang đăng nhập..." : "LOGIN"}
+          <button
+            onClick={handleLogin}
+            disabled={loginLoading}
+            className={loginLoading ? "loading" : ""}
+          >
+            {loginLoading && <span className="spinner"></span>}
+            LOGIN
           </button>
           <div className="login-actions">
             <span onClick={() => navigate("/register")}>Tạo tài khoản</span>
