@@ -30,14 +30,14 @@ function Login() {
   useEffect(() => {
     if (location.state?.message && !hasShown.current) {
       hasShown.current = true;
-      alert(location.state.message);
+      showToast(location.state.message);
       window.history.replaceState({}, document.title);
     }
   }, [location]);
 
   // 🔥 LOGIN
   const handleLogin = async () => {
-    if (loginLoading) return; // 🔥 chặn spam
+    if (loginLoading) return;
 
     try {
       setLoginLoading(true);
@@ -50,13 +50,16 @@ function Login() {
       localStorage.setItem("userId", userId);
       localStorage.setItem("roles", JSON.stringify(roles));
 
-      alert("Đăng nhập thành công!");
-      navigate("/");
+      showToast("🎉 Đăng nhập thành công!");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     } catch (err) {
       const msg = err.response?.data?.message || "Sai email hoặc mật khẩu!";
-      alert(msg);
+      showToast(msg, "error");
     } finally {
-      setLoginLoading(false); // 🔥 mở lại button
+      setLoginLoading(false);
     }
   };
 
@@ -78,6 +81,7 @@ function Login() {
 
   return (
     <div>
+      {toast && <div className={`toast ${toast.type}`}>{toast.message}</div>}
       <Topbar />
       <Navbar />
 
