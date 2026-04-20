@@ -20,6 +20,15 @@ function Checkout() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // 🔥 TOAST
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  };
 
   if (!data) {
     return <div>Không có dữ liệu checkout</div>;
@@ -40,7 +49,10 @@ function Checkout() {
     return "";
   };
 
+  // 🔥 CONFIRM ORDER
   const handleConfirm = async () => {
+    if (loading) return; // 🔥 chống spam
+
     const errMsg = validate();
     if (errMsg) {
       setError(errMsg);
@@ -48,6 +60,9 @@ function Checkout() {
     }
 
     try {
+      setLoading(true);
+      setError("");
+
       await orderApi.confirm({
         cartId: data.cart.cartId,
         userId: data.user.userId,
@@ -59,23 +74,34 @@ function Checkout() {
         paymentMethod: form.paymentMethod,
       });
 
-      alert("Đặt hàng thành công!");
-      navigate("/orders");
+      showToast("🎉 Đặt hàng thành công!");
+
+      setTimeout(() => {
+        navigate("/orders");
+      }, 1200);
     } catch (err) {
-      alert(err.response?.data?.message);
+      showToast(err.response?.data?.message || "Đặt hàng thất bại", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
-      {/* 🔥 TOPBAR CUSTOM */}
+      {/* 🔥 TOAST */}
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.type === "success" ? "✔" : "✖"} {toast.message}
+        </div>
+      )}
+
+      {/* 🔥 TOPBAR */}
       <div className="checkout-topbar">
         <div className="logo" onClick={() => navigate("/")}>
           <div className="main">THE SHOP</div>
           <div className="sub">VOO DY SERN</div>
         </div>
 
-        {/* 👜 ICON CUSTOM */}
         <div className="bag-icon" onClick={() => navigate("/cart")}>
           <ShoppingOutlined />
         </div>
@@ -87,7 +113,7 @@ function Checkout() {
 
         {error && <div className="error">{error}</div>}
 
-        {/* 🔥 PRODUCTS */}
+        {/* PRODUCTS */}
         <div className="products">
           <h3>Products</h3>
 
@@ -95,22 +121,20 @@ function Checkout() {
             <div key={item.cartDetailId} className="product-item">
               <div className="image-wrapper">
                 <img src={buildImageUrl(item.product.mainImage)} alt="" />
-
-                {/* 🔥 BADGE */}
                 <div className="quantity-badge">{item.quantity}</div>
               </div>
 
               <div className="info">
                 <p className="name">{item.product.name}</p>
                 <p className="price">
-                  {item.totalAmount.toLocaleString("vi-VN")}đ{" "}
+                  {item.totalAmount.toLocaleString("vi-VN")}đ
                 </p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* 🔥 FORM */}
+        {/* FORM */}
         <div className="form">
           <input
             name="receiver"
@@ -118,14 +142,12 @@ function Checkout() {
             placeholder="Tên người nhận"
             onChange={handleChange}
           />
-
           <input
             name="number"
             value={form.number}
             placeholder="Số điện thoại"
             onChange={handleChange}
           />
-
           <input
             name="address"
             value={form.address}
@@ -140,7 +162,7 @@ function Checkout() {
           </select>
         </div>
 
-        {/* 🔥 QR */}
+        {/* QR */}
         {form.paymentMethod === "BANK" && (
           <div className="qr">
             <p>Quét mã QR để thanh toán</p>
@@ -148,16 +170,15 @@ function Checkout() {
           </div>
         )}
 
-        {/* 🔥 SUMMARY */}
+        {/* SUMMARY */}
         <div className="summary">
           <p>
-            Tạm tính:
-            <span>{data.subtotal.toLocaleString("vi-VN")}đ</span>
+            Tạm tính:<span>{data.subtotal.toLocaleString("vi-VN")}đ</span>
           </p>
           <p>
-            Phí ship:
-            <span>{data.shippingFee.toLocaleString("vi-VN")}đ</span>
+            Phí ship:<span>{data.shippingFee.toLocaleString("vi-VN")}đ</span>
           </p>
+
           <h3>
             Tổng:
             <span>
@@ -166,10 +187,17 @@ function Checkout() {
           </h3>
         </div>
 
-        <button className="confirm-btn" onClick={handleConfirm}>
-          CONFIRM ORDER
+        {/* 🔥 BUTTON */}
+        <button
+          className={`confirm-btn ${loading ? "loading" : ""}`}
+          onClick={handleConfirm}
+          disabled={loading}
+        >
+          {loading && <span className="spinner"></span>}
+          XÁC NHẬN ĐẶT HÀNG
         </button>
       </div>
+
       <Footer />
     </>
   );
