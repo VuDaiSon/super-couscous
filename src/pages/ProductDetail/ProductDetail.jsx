@@ -9,6 +9,14 @@ import { buildImageUrl } from "../../utils/image";
 import Footer from "../../components/footer/Footer";
 
 function ProductDetail() {
+  const [adding, setAdding] = useState(false);
+
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  };
   const { productId } = useParams();
   const navigate = useNavigate();
 
@@ -115,20 +123,26 @@ function ProductDetail() {
 
   // ================= CART =================
   const handleAddToCart = async () => {
+    if (adding) return; // 🔥 chống spam
+
     try {
+      setAdding(true);
+
       await cartApi.addToCart(productId, quantity);
 
       // 🔥 animation
       const btn = document.querySelector(".add");
       btn.classList.add("clicked");
 
-      setTimeout(() => btn.classList.remove("clicked"), 500);
+      setTimeout(() => btn.classList.remove("clicked"), 400);
 
-      // 🔥 THÔNG BÁO
-      alert("✅ Đã thêm vào giỏ hàng!");
+      // 🔥 toast đẹp
+      showToast("Đã thêm vào giỏ hàng");
     } catch (err) {
       console.log(err);
-      alert("❌ Thêm vào giỏ thất bại");
+      showToast("Thêm vào giỏ thất bại", "error");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -138,6 +152,11 @@ function ProductDetail() {
   // ================= UI =================
   return (
     <div>
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.type === "success" ? "🛒" : "❌"} {toast.message}
+        </div>
+      )}
       <Topbar />
       <Navbar />
 
@@ -242,11 +261,12 @@ function ProductDetail() {
               </div>
 
               <button
-                className="add"
-                disabled={product.quantity === 0}
+                className={`add ${adding ? "loading" : ""}`}
+                disabled={product.quantity === 0 || adding}
                 onClick={handleAddToCart}
               >
-                THÊM VÀO GIỎ
+                {adding && <span className="spinner"></span>}
+                {adding ? "ĐANG THÊM..." : "THÊM VÀO GIỎ"}
               </button>
             </div>
           </div>
