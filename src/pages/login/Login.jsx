@@ -8,6 +8,12 @@ import Footer from "../../components/footer/Footer";
 import "./Login.scss";
 
 function Login() {
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  };
   const hasShown = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
