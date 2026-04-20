@@ -9,6 +9,12 @@ import { buildImageUrl } from "../../utils/image";
 import Footer from "../../components/footer/Footer";
 
 function Cart() {
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 2500);
+  };
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingCheckout, setLoadingCheckout] = useState(false);
@@ -46,13 +52,21 @@ function Cart() {
   };
 
   const handleCheckout = async () => {
+    if (loadingCheckout) return;
+
     try {
       setLoadingCheckout(true);
+
       const res = await orderApi.checkout();
       const checkoutData = res.data.data;
-      navigate("/checkout", { state: checkoutData });
+
+      showToast("Đang chuyển sang thanh toán...");
+
+      setTimeout(() => {
+        navigate("/checkout", { state: checkoutData });
+      }, 800);
     } catch (err) {
-      alert(err.response?.data?.message || "Lỗi checkout");
+      showToast(err.response?.data?.message || "Checkout lỗi", "error");
     } finally {
       setLoadingCheckout(false);
     }
@@ -88,6 +102,11 @@ function Cart() {
 
   return (
     <div>
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.type === "success" ? "✅" : "❌"} {toast.message}
+        </div>
+      )}
       <Topbar />
       <Navbar />
 
@@ -165,11 +184,12 @@ function Cart() {
           </div>
 
           <button
-            className="checkout-btn"
+            className={`checkout-btn ${loadingCheckout ? "loading" : ""}`}
             onClick={handleCheckout}
             disabled={loadingCheckout || !cart?.cartDetails?.length}
           >
-            {loadingCheckout ? "PROCESSING..." : "CHECKOUT"}
+            {loadingCheckout && <span className="spinner"></span>}
+            CHECKOUT
           </button>
 
           <button className="continue-btn" onClick={() => navigate("/")}>
