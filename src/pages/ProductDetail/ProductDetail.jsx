@@ -123,26 +123,32 @@ function ProductDetail() {
 
   // ================= CART =================
   const handleAddToCart = async () => {
-    if (adding) return; // 🔥 chống spam
+    const userId = localStorage.getItem("userId");
+
+    // ❌ CHƯA LOGIN
+    if (!userId) {
+      showToast("Bạn cần đăng nhập để thực hiện chức năng này!", "error");
+
+      setTimeout(() => {
+        navigate("/login", {
+          state: { message: "Vui lòng đăng nhập để tiếp tục" },
+        });
+      }, 1200);
+
+      return;
+    }
 
     try {
-      setAdding(true);
-
       await cartApi.addToCart(productId, quantity);
 
-      // 🔥 animation
+      // animation
       const btn = document.querySelector(".add");
       btn.classList.add("clicked");
-
       setTimeout(() => btn.classList.remove("clicked"), 400);
 
-      // 🔥 toast đẹp
-      showToast("Đã thêm vào giỏ hàng");
+      showToast("Đã thêm vào giỏ hàng!");
     } catch (err) {
-      console.log(err);
-      showToast("Bạn cần đăng nhập để thực hiện chức năng này!", "error");
-    } finally {
-      setAdding(false);
+      showToast(err.response?.data?.message || "Thêm thất bại", "error");
     }
   };
 
