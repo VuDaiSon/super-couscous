@@ -436,14 +436,23 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      z-index: 999;
 
-      padding: 16px;
+      padding: 14px;
       font-size: 14px;
       letter-spacing: 2px;
 
       border-radius: 0;
+      z-index: 1000;
+
+      /* 🔥 UI đẹp hơn */
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+      border-top: 1px solid #eee;
     }
+  }
+
+  /* 🔥 tránh bị che content */
+  .product-page {
+    padding-bottom: 80px;
   }
 
   /* tránh bị che nội dung */
