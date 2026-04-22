@@ -140,7 +140,7 @@ function ProductDetail() {
       showToast("Đã thêm vào giỏ hàng");
     } catch (err) {
       console.log(err);
-      showToast("Thêm vào giỏ thất bại", "error");
+      showToast("Bạn cần đăng nhập để thực hiện chức năng này!", "error");
     } finally {
       setAdding(false);
     }
