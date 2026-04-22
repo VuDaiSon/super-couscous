@@ -123,35 +123,43 @@ function ProductDetail() {
 
   // ================= CART =================
   const handleAddToCart = async () => {
-    const userId = localStorage.getItem("userId");
-
-    // ❌ CHƯA LOGIN
-    if (!userId) {
-      showToast("Bạn cần đăng nhập để thực hiện chức năng này!", "error");
-
-      setTimeout(() => {
-        navigate("/login", {
-          state: { message: "Vui lòng đăng nhập để tiếp tục" },
-        });
-      }, 1200);
-
-      return;
-    }
+    if (adding) return; // 🔥 chống spam
 
     try {
+      setAdding(true);
+
       await cartApi.addToCart(productId, quantity);
 
-      // animation
+      // 🔥 animation button
       const btn = document.querySelector(".add");
-      btn.classList.add("clicked");
-      setTimeout(() => btn.classList.remove("clicked"), 400);
+      btn?.classList.add("clicked");
 
-      showToast("Đã thêm vào giỏ hàng!");
+      setTimeout(() => btn?.classList.remove("clicked"), 400);
+
+      // 🔥 toast success
+      showToast("Đã thêm vào giỏ hàng");
     } catch (err) {
-      showToast(err.response?.data?.message || "Thêm thất bại", "error");
+      console.log(err);
+
+      // 🔥 detect chưa login (chuẩn hơn)
+      if (err.response?.status === 401) {
+        showToast("Bạn cần đăng nhập để thực hiện chức năng này!", "error");
+
+        setTimeout(() => {
+          navigate("/login", {
+            state: { message: "Vui lòng đăng nhập để tiếp tục" },
+          });
+        }, 1200);
+      } else {
+        showToast(
+          err.response?.data?.message || "Thêm vào giỏ thất bại",
+          "error",
+        );
+      }
+    } finally {
+      setAdding(false);
     }
   };
-
   // ================= LOADING =================
   if (!product) return <div className="loading">Loading...</div>;
 
